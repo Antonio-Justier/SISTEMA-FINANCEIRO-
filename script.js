@@ -15,6 +15,13 @@ let state = {
 let currentUser = null;
 let currentToken = "";
 
+// Fila de salvamento: garante que os POSTs pro backend sejam enviados em
+// ordem, um de cada vez. Sem isso, dois saves disparados em sequência rápida
+// (ex.: salvar salário e, segundos depois, adicionar um gasto) podem chegar
+// ao servidor fora de ordem — e o request mais antigo, que não tinha o
+// gasto, "vence" por responder depois, apagando o dado mais novo.
+let saveQueue = Promise.resolve();
+
 const currency = new Intl.NumberFormat("pt-BR", {
   style: "currency",
   currency: "BRL",
@@ -142,7 +149,12 @@ async function saveState() {
   saveLocalState();
 
   if (USE_BACKEND && currentUser) {
-    await saveBackendState();
+    // Encadeia na fila em vez de disparar um fetch concorrente. Cada elo da
+    // fila só executa depois que o anterior terminar, e lê o `state` global
+    // no momento em que de fato roda — então mesmo enfileirado, ele sempre
+    // manda a versão mais atual, nunca uma desatualizada.
+    saveQueue = saveQueue.then(() => saveBackendState());
+    await saveQueue;
   }
 }
 
