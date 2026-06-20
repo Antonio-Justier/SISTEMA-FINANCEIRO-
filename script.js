@@ -633,6 +633,23 @@ async function reloadState() {
 
 initialize();
 
+// No iOS, matar o app pelos apps recentes só é possível depois de ele já ter
+// ido pra segundo plano — e é exatamente nesse momento de transição que ainda
+// dá pra rodar JS por uma janela curta. "visibilitychange" (hidden) e
+// "pagehide" são os únicos eventos com chance real de disparar antes do
+// sistema suspender/matar o processo. Não é garantia (um kill no momento
+// errado ainda pode perder dados — isso é limitação do sistema, não só do
+// código), mas reduz bastante a janela de risco, forçando um save extra
+// assim que o app sai de foco, em vez de confiar só no save da última ação.
+function flushStateOnExit() {
+  if (document.visibilityState === "hidden") {
+    saveState().catch(() => {});
+  }
+}
+
+document.addEventListener("visibilitychange", flushStateOnExit);
+window.addEventListener("pagehide", flushStateOnExit);
+
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("service-worker.js").catch(() => {});
