@@ -29,13 +29,34 @@ function generateId() {
 }
 
 async function loadState() {
+  // Lê o local PRIMEIRO. Se o último salvamento no backend não tiver
+  // terminado (ex.: usuário fechou a aba no celular antes do POST concluir),
+  // o localStorage pode ter uma versão mais nova que o servidor.
+  const local = loadLocalState();
   const session = await getSession();
+
   if (session.authenticated) {
     currentUser = session.user;
     const backendState = await loadBackendState();
-    if (backendState) return backendState;
+
+    const localIsNewer =
+      local && backendState && (local.updatedAt || 0) > (backendState.updatedAt || 0);
+
+    if (localIsNewer) {
+      // O local é mais novo: usa ele e tenta reenviar para o backend agora,
+      // pra sincronizar o que ficou pendente.
+      return { resolved: local, needsResync: true };
+    }
+
+    if (backendState) {
+      return { resolved: backendState, needsResync: false };
+    }
   }
-  return loadLocalState() || { salary: 0, expenses: [], invoices: [] };
+
+  return {
+    resolved: local || { salary: 0, expenses: [], invoices: [], updatedAt: 0 },
+    needsResync: false,
+  };
 }
 
 function loadLocalState() {
@@ -115,15 +136,18 @@ async function loadBackendState() {
 }
 
 async function saveState() {
-  if (USE_BACKEND && currentUser) {
-    saveBackendState().catch(() => saveLocalState());
-    return;
-  }
-
+  // Grava local SEMPRE, primeiro e de forma síncrona. Isso garante que,
+  // mesmo se o request pro backend for cancelado (aba fechada no celular,
+  // sem internet, servidor fora do ar), o dado não se perde.
   saveLocalState();
+
+  if (USE_BACKEND && currentUser) {
+    await saveBackendState();
+  }
 }
 
 function saveLocalState() {
+  state.updatedAt = Date.now();
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch {
@@ -139,6 +163,10 @@ async function saveBackendState() {
   try {
     await fetch(API_URL, {
       method: "POST",
+      // keepalive: garante que o navegador deixe o request terminar mesmo
+      // se a aba for fechada/atualizada antes da resposta chegar (mobile é
+      // especialmente agressivo cancelando requests no fechamento de aba).
+      keepalive: true,
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
@@ -146,7 +174,8 @@ async function saveBackendState() {
       body: JSON.stringify(state),
     });
   } catch {
-    // Se o backend falhar, o app continua funcionando localmente.
+    // O backend falhou, mas saveState() já garantiu uma cópia local antes
+    // de chamar esta função, então nada se perde aqui.
   }
 }
 
@@ -563,9 +592,10 @@ async function initialize() {
   const session = await getSession();
   setAuthenticated(session.authenticated ? session.user : null);
 
-  const loaded = await loadState();
-  if (loaded) {
-    state = loaded;
+  const { resolved, needsResync } = await loadState();
+  state = resolved;
+  if (needsResync) {
+    saveBackendState().catch(() => {});
   }
 
   if (state.salary > 0) {
@@ -576,11 +606,10 @@ async function initialize() {
 }
 
 async function reloadState() {
-  const loaded = await loadState();
-  if (loaded) {
-    state = loaded;
-  } else {
-    state = { salary: 0, expenses: [], invoices: [] };
+  const { resolved, needsResync } = await loadState();
+  state = resolved;
+  if (needsResync) {
+    saveBackendState().catch(() => {});
   }
 
   if (state.salary > 0) {
