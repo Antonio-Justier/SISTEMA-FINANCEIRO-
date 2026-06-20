@@ -2,8 +2,7 @@ const STORAGE_KEY = "controle-financeiro:state";
 const TOKEN_KEY = "controle-financeiro:token";
 const USE_BACKEND = true;
 
-const BACKEND_URL = typeof BACKEND_URL !== "undefined" ? String(BACKEND_URL).trim().replace(/\/+$/, "") : "";
-const API_BASE = BACKEND_URL || "";
+const API_BASE = (typeof BACKEND_URL !== "undefined" ? String(BACKEND_URL).trim().replace(/\/+$/, "") : "") || "";
 const API_URL = `${API_BASE}/api/state`;
 const API_AUTH = `${API_BASE}/api`;
 
