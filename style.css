@@ -1,0 +1,509 @@
+/* ---------------------------------------------------------
+   Tokens
+--------------------------------------------------------- */
+:root {
+  --bg: #f6f3ec;
+  --ink: #21241f;
+  --ink-soft: #5d6157;
+  --surface: #fffdf8;
+  --line: #e2dccb;
+  --green: #1f6f54;
+  --green-soft: #e4efe8;
+  --rust: #b3441e;
+  --rust-soft: #f6e6df;
+
+  --font-display: "Fraunces", "Georgia", serif;
+  --font-body: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "IBM Plex Mono", "Courier New", monospace;
+
+  --radius: 14px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  line-height: 1.5;
+}
+
+.page {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 48px 24px 64px;
+}
+
+/* ---------------------------------------------------------
+   Header
+--------------------------------------------------------- */
+.page__header {
+  margin-bottom: 40px;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--green);
+  margin: 0 0 10px;
+}
+
+h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(32px, 5vw, 46px);
+  margin: 0 0 12px;
+  letter-spacing: -0.01em;
+}
+
+.subtitle {
+  margin: 0;
+  max-width: 520px;
+  color: var(--ink-soft);
+  font-size: 16px;
+}
+
+/* ---------------------------------------------------------
+   Layout
+--------------------------------------------------------- */
+.layout {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 28px;
+  align-items: start;
+}
+
+#app-layout {
+  display: none;
+}
+
+#auth-bar {
+  display: none;
+}
+
+@media (max-width: 800px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------------------------------------------------------
+   Form panel
+--------------------------------------------------------- */
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.panel__block {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 24px;
+}
+
+.panel__block h2 {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 16px;
+}
+
+.auth-panel {
+  margin-bottom: 32px;
+}
+
+.auth-bar {
+  display: none;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 18px;
+  gap: 16px;
+}
+
+.auth-bar span {
+  font-weight: 600;
+}
+
+.auth-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.auth-message {
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+.auth-message--error {
+  color: var(--rust);
+}
+
+.auth-message--success {
+  color: var(--green);
+}
+
+@media (max-width: 460px) {
+  .auth-actions {
+    flex-direction: column;
+  }
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--ink-soft);
+  flex: 1;
+}
+
+.field-row {
+  display: flex;
+  gap: 14px;
+}
+
+@media (max-width: 460px) {
+  .field-row {
+    flex-direction: column;
+  }
+}
+
+input,
+select {
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--ink);
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+input:focus,
+select:focus {
+  outline: 2px solid var(--green);
+  outline-offset: 1px;
+  border-color: var(--green);
+}
+
+.input-money {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  padding-left: 12px;
+  gap: 4px;
+}
+
+.input-money span {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.input-money input {
+  border: none;
+  padding-left: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.input-money input:focus {
+  outline: none;
+}
+
+.input-money:has(input:focus) {
+  outline: 2px solid var(--green);
+  outline-offset: 1px;
+  border-color: var(--green);
+}
+
+.btn {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 11px 18px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn--primary {
+  background: var(--ink);
+  color: var(--surface);
+}
+
+.btn--primary:hover {
+  box-shadow: 0 4px 14px rgba(33, 36, 31, 0.18);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------
+   Receipt card (resumo)
+--------------------------------------------------------- */
+.receipt {
+  position: relative;
+}
+
+.receipt__paper {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 28px 24px 8px;
+  box-shadow: 0 1px 0 var(--line);
+}
+
+.receipt__label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin: 0 0 6px;
+}
+
+.receipt__balance {
+  font-family: var(--font-mono);
+  font-size: clamp(34px, 6vw, 44px);
+  font-weight: 600;
+  margin: 0 0 6px;
+  color: var(--green);
+  transition: color 0.15s ease;
+}
+
+.receipt__balance.is-negative {
+  color: var(--rust);
+}
+
+.receipt__hint {
+  margin: 0 0 18px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.receipt__divider {
+  border-top: 1px solid var(--line);
+  margin: 14px 0;
+}
+
+.receipt__divider--dashed {
+  border-top: 1px dashed var(--line);
+}
+
+.receipt__row {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  padding: 5px 0;
+  color: var(--ink-soft);
+}
+
+.receipt__row--total {
+  color: var(--ink);
+  font-weight: 600;
+  border-top: 1px solid var(--line);
+  margin-top: 4px;
+  padding-top: 10px;
+}
+
+.receipt__items-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.link-btn {
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-underline-offset: 3px;
+}
+
+.link-btn:hover {
+  color: var(--rust);
+  text-decoration-color: var(--rust);
+}
+
+.link-btn:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
+.receipt__items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.receipt__empty {
+  font-size: 13px;
+  color: var(--ink-soft);
+  padding: 8px 0;
+  font-family: var(--font-body);
+}
+
+.receipt__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px dashed var(--line);
+  font-size: 13.5px;
+}
+
+.receipt__item:last-child {
+  border-bottom: none;
+}
+
+.receipt__item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.receipt__item-desc {
+  font-family: var(--font-body);
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.receipt__item-tag {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.receipt__item-tag.is-fixed {
+  color: var(--rust);
+}
+
+.receipt__item-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.receipt__item-small {
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  display: block;
+  line-height: 1.3;
+}
+
+.receipt__item-tag.is-overdue {
+  color: var(--rust);
+}
+
+.receipt__item-amount {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.receipt__item-remove {
+  border: none;
+  background: var(--rust-soft);
+  color: var(--rust);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.receipt__item-remove:hover {
+  background: var(--rust);
+  color: var(--surface);
+}
+
+.receipt__item-remove:focus-visible {
+  outline: 2px solid var(--rust);
+  outline-offset: 2px;
+}
+
+/* Borda de "recibo rasgado" no rodapé do card */
+.receipt__tear {
+  height: 14px;
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--surface) 0,
+    var(--surface) 7px,
+    transparent 7px,
+    transparent 14px
+  );
+  margin-top: -1px;
+  filter: drop-shadow(0 2px 1px rgba(33, 36, 31, 0.06));
+}
+
+/* ---------------------------------------------------------
+   Footnote
+--------------------------------------------------------- */
+.footnote {
+  margin-top: 32px;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  text-align: center;
+}
+
+.footnote code {
+  font-family: var(--font-mono);
+  background: var(--green-soft);
+  color: var(--green);
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-size: 11.5px;
+}

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quanto posso gastar?</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#1f6f54" />
+  <meta name="application-name" content="Financeiro" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="icon" href="icon-192.png" type="image/png" />
+  <link rel="alternate icon" href="icon.svg" type="image/svg+xml" />
+</head>
+<body>
+  <div class="page">
+    <header class="page__header">
+      <p class="eyebrow">controle pessoal</p>
+      <h1>Quanto posso gastar?</h1>
+      <p class="subtitle" id="subtitle-text">Informe seu salário, lance os gastos do mês e veja na hora o que ainda pode gastar.</p>
+      <div class="auth-bar" id="auth-bar">
+        <span id="auth-user"></span>
+        <button type="button" class="btn btn--secondary" id="logout-button">Sair</button>
+      </div>
+    </header>
+
+    <section class="auth-panel" id="auth-panel">
+      <div class="panel__block">
+        <h2>Entrar ou criar conta</h2>
+        <form id="auth-form" class="form">
+          <label class="field">
+            <span>Email</span>
+            <input type="email" id="auth-email" placeholder="Ex: você@exemplo.com" required />
+          </label>
+          <label class="field">
+            <span>Senha</span>
+            <input type="password" id="auth-password" placeholder="Sua senha" required />
+          </label>
+
+          <div class="auth-actions">
+            <button type="submit" class="btn btn--primary" id="login-button">Entrar</button>
+            <button type="button" class="btn btn--secondary" id="register-button">Criar conta</button>
+          </div>
+          <p class="auth-message" id="auth-message"></p>
+        </form>
+      </div>
+    </section>
+
+    <main class="layout" id="app-layout">
+      <section class="panel">
+        <div class="panel__block">
+          <h2>1. Seu salário</h2>
+          <form id="salary-form" class="form">
+            <label class="field">
+              <span>Salário do mês</span>
+              <div class="input-money">
+                <span>R$</span>
+                <input type="number" id="salary-input" min="0" step="0.01" inputmode="decimal" placeholder="0,00" />
+              </div>
+            </label>
+            <button type="submit" class="btn btn--primary">Salvar salário</button>
+          </form>
+        </div>
+
+        <div class="panel__block">
+          <h2>2. Lançar gasto</h2>
+          <form id="expense-form" class="form">
+            <label class="field">
+              <span>Descrição</span>
+              <input type="text" id="expense-description" placeholder="Ex: Supermercado, aluguel, internet..." required />
+            </label>
+
+            <div class="field-row">
+              <label class="field">
+                <span>Valor</span>
+                <div class="input-money">
+                  <span>R$</span>
+                  <input type="number" id="expense-amount" min="0.01" step="0.01" inputmode="decimal" placeholder="0,00" required />
+                </div>
+              </label>
+
+              <label class="field">
+                <span>Tipo</span>
+                <select id="expense-type">
+                  <option value="VARIAVEL">Variável</option>
+                  <option value="FIXO">Fixo</option>
+                </select>
+              </label>
+            </div>
+
+            <button type="submit" class="btn btn--primary">Adicionar gasto</button>
+          </form>
+        </div>
+
+        <div class="panel__block">
+          <h2>3. Faturas e parcelas</h2>
+          <form id="invoice-form" class="form">
+            <label class="field">
+              <span>Descrição da fatura</span>
+              <input type="text" id="invoice-description" placeholder="Ex: Cartão, energia, escola..." required />
+            </label>
+
+            <label class="field">
+              <span>Valor total</span>
+              <div class="input-money">
+                <span>R$</span>
+                <input type="number" id="invoice-total" min="0.01" step="0.01" inputmode="decimal" placeholder="0,00" required />
+              </div>
+            </label>
+
+            <div class="field-row">
+              <label class="field">
+                <span>Vencimento</span>
+                <input type="date" id="invoice-due-date" required />
+              </label>
+
+              <label class="field">
+                <span>Parcelas</span>
+                <input type="number" id="invoice-installments" min="1" step="1" value="1" required />
+              </label>
+            </div>
+
+            <button type="submit" class="btn btn--primary">Adicionar fatura</button>
+          </form>
+        </div>
+      </section>
+
+      <section class="receipt" aria-live="polite">
+        <div class="receipt__paper">
+          <p class="receipt__label">saldo disponível</p>
+          <p class="receipt__balance" id="balance-amount">R$ 0,00</p>
+          <p class="receipt__hint" id="balance-hint">Informe seu salário para começar.</p>
+
+          <div class="receipt__divider"></div>
+
+          <div class="receipt__row">
+            <span>Salário</span>
+            <span id="summary-salary">R$ 0,00</span>
+          </div>
+          <div class="receipt__row">
+            <span>Gastos fixos</span>
+            <span id="summary-fixed">R$ 0,00</span>
+          </div>
+          <div class="receipt__row">
+            <span>Gastos variáveis</span>
+            <span id="summary-variable">R$ 0,00</span>
+          </div>
+          <div class="receipt__row">
+            <span>Parcelas / faturas</span>
+            <span id="summary-invoices">R$ 0,00</span>
+          </div>
+          <div class="receipt__row receipt__row--total">
+            <span>Total de gastos</span>
+            <span id="summary-total">R$ 0,00</span>
+          </div>
+
+          <div class="receipt__divider receipt__divider--dashed"></div>
+
+          <div class="receipt__items-header">
+            <p class="receipt__label">itens lançados</p>
+            <button type="button" class="link-btn" id="clear-data">Limpar dados</button>
+          </div>
+          <ul class="receipt__items" id="expense-list">
+            <li class="receipt__empty" id="expense-empty">Nenhum gasto lançado ainda.</li>
+          </ul>
+
+          <div class="receipt__divider"></div>
+
+          <div class="receipt__items-header">
+            <p class="receipt__label">faturas</p>
+          </div>
+          <ul class="receipt__items" id="invoice-list">
+            <li class="receipt__empty" id="invoice-empty">Nenhuma fatura lançada.</li>
+          </ul>
+        </div>
+        <div class="receipt__tear"></div>
+      </section>
+    </main>
+
+    <p class="footnote">
+      Seus dados agora são salvos por usuário quando o backend estiver ativo.
+      Se você usar localmente, primeiro faça login ou crie uma conta.
+    </p>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
