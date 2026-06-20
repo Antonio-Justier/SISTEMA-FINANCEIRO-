@@ -86,11 +86,11 @@ function isValidState(value) {
 }
 
 function isValidUsername(value) {
-  return typeof value === "string" && value.trim().length >= 3;
+  return typeof value === "string" && value.trim().length > 0;
 }
 
 function isValidPassword(value) {
-  return typeof value === "string" && value.length >= 6;
+  return typeof value === "string" && value.length > 0;
 }
 
 async function ensureDataDirectory() {
