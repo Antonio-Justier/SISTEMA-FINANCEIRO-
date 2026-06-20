@@ -3,7 +3,7 @@ const express = require("express");
 const helmet = require("helmet");
 const cors = require("cors");
 const bcrypt = require("bcrypt");
-const session = require("express-session");
+const jwt = require("jsonwebtoken");
 const fs = require("fs").promises;
 const path = require("path");
 const { createClient } = require("@supabase/supabase-js");
@@ -17,6 +17,9 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
   ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
   : null;
+
+const JWT_SECRET = process.env.JWT_SECRET || "troque-para-uma-chave-jwt-segura";
+const JWT_EXPIRY = "7d";
 
 const DEFAULT_STATE = {
   salary: 0,
@@ -52,18 +55,6 @@ app.use(
   })
 );
 app.use(express.json({ limit: "50kb" }));
-app.use(
-  session({
-    secret: "troque-para-uma-chave-segura-local",
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      secure: process.env.NODE_ENV === "production",
-    },
-  })
-);
 app.use(express.static(path.join(__dirname)));
 
 function isValidState(value) {
@@ -146,6 +137,29 @@ async function writeStateFile(userId, state) {
   await saveJsonFile(userStateFile(userId), state);
 }
 
+function createToken(userId) {
+  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRY });
+}
+
+function getUserIdFromRequest(req) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || typeof authHeader !== "string") {
+    return null;
+  }
+
+  const [scheme, token] = authHeader.split(" ");
+  if (scheme !== "Bearer" || !token) {
+    return null;
+  }
+
+  try {
+    const payload = jwt.verify(token, JWT_SECRET);
+    return payload.userId;
+  } catch {
+    return null;
+  }
+}
+
 async function saveSupabaseState(userId, state) {
   if (!supabase) {
     return;
@@ -180,17 +194,27 @@ async function getSupabaseState(userId) {
   return data.state;
 }
 
-function requireAuth(req, res, next) {
-  if (req.session && req.session.userId) {
-    return next();
+async function requireAuth(req, res, next) {
+  const userId = getUserIdFromRequest(req);
+  if (!userId) {
+    return res.status(401).json({ error: "Não autenticado" });
   }
-  res.status(401).json({ error: "Não autenticado" });
+
+  const users = await loadUsers();
+  const user = users.find((item) => item.id === userId) || null;
+  if (!user) {
+    return res.status(401).json({ error: "Não autenticado" });
+  }
+
+  req.user = user;
+  next();
 }
 
-async function getUserFromSession(req) {
-  if (!req.session || !req.session.userId) return null;
+async function getUserFromToken(req) {
+  const userId = getUserIdFromRequest(req);
+  if (!userId) return null;
   const users = await loadUsers();
-  return users.find((user) => user.id === req.session.userId) || null;
+  return users.find((user) => user.id === userId) || null;
 }
 
 app.post("/api/register", async (req, res) => {
@@ -218,9 +242,12 @@ app.post("/api/register", async (req, res) => {
 
   users.push(user);
   await saveUsers(users);
-  req.session.userId = userId;
+  const token = createToken(user.id);
 
-  res.json({ user: { id: user.id, username: user.username } });
+  res.json({
+    user: { id: user.id, username: user.username },
+    token,
+  });
 });
 
 app.post("/api/login", async (req, res) => {
@@ -244,18 +271,19 @@ app.post("/api/login", async (req, res) => {
     return res.status(401).json({ error: "Usuário ou senha incorretos." });
   }
 
-  req.session.userId = user.id;
-  res.json({ user: { id: user.id, username: user.username } });
-});
-
-app.post("/api/logout", (req, res) => {
-  req.session.destroy(() => {
-    res.sendStatus(204);
+  const token = createToken(user.id);
+  res.json({
+    user: { id: user.id, username: user.username },
+    token,
   });
 });
 
+app.post("/api/logout", (req, res) => {
+  res.sendStatus(204);
+});
+
 app.get("/api/session", async (req, res) => {
-  const user = await getUserFromSession(req);
+  const user = await getUserFromToken(req);
   if (!user) {
     return res.json({ authenticated: false });
   }
@@ -263,9 +291,9 @@ app.get("/api/session", async (req, res) => {
 });
 
 app.get("/api/state", requireAuth, async (req, res) => {
-  let state = await readStateFile(req.session.userId);
+  let state = await readStateFile(req.user.id);
   if (supabase) {
-    const supabaseState = await getSupabaseState(req.session.userId);
+    const supabaseState = await getSupabaseState(req.user.id);
     if (supabaseState) {
       state = supabaseState;
     }
@@ -280,9 +308,9 @@ app.post("/api/state", requireAuth, async (req, res) => {
   }
 
   try {
-    await writeStateFile(req.session.userId, state);
+    await writeStateFile(req.user.id, state);
     if (supabase) {
-      await saveSupabaseState(req.session.userId, state);
+      await saveSupabaseState(req.user.id, state);
     }
     res.sendStatus(204);
   } catch (error) {
