@@ -7,12 +7,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
-    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap"
     rel="stylesheet"
   />
   <link rel="stylesheet" href="style.css" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <meta name="theme-color" content="#1f6f54" />
+  <meta name="theme-color" content="#0b0f0d" />
   <meta name="application-name" content="Financeiro" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -27,23 +27,23 @@
       <p class="eyebrow">controle pessoal</p>
       <h1>Quanto posso gastar?</h1>
       <p class="subtitle" id="subtitle-text">Informe seu salário, lance os gastos do mês e veja na hora o que ainda pode gastar.</p>
-      <div class="auth-bar" id="auth-bar">
+      <div class="auth-bar" id="auth-bar" hidden>
         <span id="auth-user"></span>
-        <button type="button" class="btn btn--secondary" id="logout-button">Sair</button>
+        <button type="button" class="btn btn--ghost" id="logout-button">Sair</button>
       </div>
     </header>
 
     <section class="auth-panel" id="auth-panel">
       <div class="panel__block">
         <h2>Entrar ou criar conta</h2>
-        <form id="auth-form" class="form">
+        <form id="auth-form" class="form" autocomplete="on">
           <label class="field">
             <span>Usuário</span>
-            <input type="text" id="auth-email" placeholder="Nome de usuário ou email" required />
+            <input type="text" id="auth-email" placeholder="Nome de usuário ou email" autocomplete="username" required />
           </label>
           <label class="field">
             <span>Senha</span>
-            <input type="password" id="auth-password" placeholder="Sua senha" required />
+            <input type="password" id="auth-password" placeholder="Sua senha" autocomplete="current-password" required />
           </label>
 
           <div class="auth-actions">
@@ -55,10 +55,87 @@
       </div>
     </section>
 
-    <main class="layout" id="app-layout">
-      <section class="panel">
-        <div class="panel__block">
-          <h2>1. Seu salário</h2>
+    <main class="app" id="app-layout" hidden>
+      <!-- HERO: saldo sempre visível, com cor que muda conforme o quanto já foi gasto -->
+      <section class="hero" id="balance-card" aria-live="polite">
+        <p class="hero__label">saldo disponível</p>
+        <p class="hero__balance" id="balance-amount">R$ 0,00</p>
+        <div class="hero__bar" role="img" aria-label="Percentual da receita já comprometido">
+          <span class="hero__bar-fill" id="balance-bar"></span>
+        </div>
+        <p class="hero__hint" id="balance-hint">Informe seu salário para começar.</p>
+        <div class="hero__stats">
+          <div class="hero__stat">
+            <span class="hero__stat-label">receita</span>
+            <span class="hero__stat-value" id="hero-income">R$ 0,00</span>
+          </div>
+          <div class="hero__stat">
+            <span class="hero__stat-label">gastos</span>
+            <span class="hero__stat-value" id="hero-expenses">R$ 0,00</span>
+          </div>
+          <div class="hero__stat">
+            <span class="hero__stat-label">usado</span>
+            <span class="hero__stat-value" id="hero-ratio">0%</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ABAS -->
+      <nav class="tabs" role="tablist" aria-label="Seções">
+        <button class="tab is-active" role="tab" id="tab-resumo" data-tab="resumo" aria-selected="true" aria-controls="panel-resumo">Resumo</button>
+        <button class="tab" role="tab" id="tab-gastos" data-tab="gastos" aria-selected="false" aria-controls="panel-gastos">Gastos</button>
+        <button class="tab" role="tab" id="tab-assinaturas" data-tab="assinaturas" aria-selected="false" aria-controls="panel-assinaturas">Assinaturas</button>
+        <button class="tab" role="tab" id="tab-faturas" data-tab="faturas" aria-selected="false" aria-controls="panel-faturas">Faturas</button>
+      </nav>
+
+      <!-- PAINEL: RESUMO -->
+      <section class="panel-view is-active" id="panel-resumo" role="tabpanel" aria-labelledby="tab-resumo" data-panel="resumo">
+        <div class="card">
+          <div class="card__head">
+            <h2>Para onde vai o dinheiro</h2>
+            <p class="card__sub">Composição dos gastos do mês.</p>
+          </div>
+          <div class="chart-row">
+            <div class="donut-wrap">
+              <canvas id="chart-donut" width="200" height="200" aria-label="Gráfico de composição dos gastos"></canvas>
+              <div class="donut-center">
+                <span class="donut-center__label">total</span>
+                <span class="donut-center__value" id="donut-total">R$ 0,00</span>
+              </div>
+            </div>
+            <ul class="legend" id="donut-legend"></ul>
+          </div>
+          <p class="empty" id="chart-empty">Lance gastos para ver a composição.</p>
+        </div>
+
+        <div class="card">
+          <div class="card__head">
+            <h2>Receita x gasto</h2>
+          </div>
+          <div class="meter" id="meter-list"></div>
+        </div>
+
+        <div class="card">
+          <div class="card__head">
+            <h2>Resumo do mês</h2>
+            <button type="button" class="link-btn" id="clear-data">Limpar tudo</button>
+          </div>
+          <dl class="summary">
+            <div class="summary__row"><dt>Salário</dt><dd id="summary-salary">R$ 0,00</dd></div>
+            <div class="summary__row"><dt>Recebido por fora</dt><dd id="summary-extra">R$ 0,00</dd></div>
+            <div class="summary__row"><dt>Gastos fixos</dt><dd id="summary-fixed">R$ 0,00</dd></div>
+            <div class="summary__row"><dt>Gastos variáveis</dt><dd id="summary-variable">R$ 0,00</dd></div>
+            <div class="summary__row"><dt>Assinaturas</dt><dd id="summary-subs">R$ 0,00</dd></div>
+            <div class="summary__row"><dt>Parcelas / faturas</dt><dd id="summary-invoices">R$ 0,00</dd></div>
+            <div class="summary__row summary__row--total"><dt>Total de gastos</dt><dd id="summary-total">R$ 0,00</dd></div>
+          </dl>
+        </div>
+      </section>
+
+      <!-- PAINEL: GASTOS -->
+      <section class="panel-view" id="panel-gastos" role="tabpanel" aria-labelledby="tab-gastos" data-panel="gastos" hidden>
+        <div class="card">
+          <div class="card__head"><h2>Receitas</h2><p class="card__sub">Salário do mês e qualquer dinheiro extra que entrou.</p></div>
           <form id="salary-form" class="form">
             <label class="field">
               <span>Salário do mês</span>
@@ -69,16 +146,36 @@
             </label>
             <button type="submit" class="btn btn--primary">Salvar salário</button>
           </form>
+
+          <form id="income-form" class="form form--inset">
+            <label class="field">
+              <span>Recebido por fora</span>
+              <input type="text" id="income-description" placeholder="Ex: freelance, venda, presente..." required />
+            </label>
+            <div class="field-row">
+              <label class="field">
+                <span>Valor</span>
+                <div class="input-money">
+                  <span>R$</span>
+                  <input type="number" id="income-amount" min="0.01" step="0.01" inputmode="decimal" placeholder="0,00" required />
+                </div>
+              </label>
+              <button type="submit" class="btn btn--primary btn--end">Adicionar</button>
+            </div>
+          </form>
+
+          <ul class="items" id="income-list">
+            <li class="empty" id="income-empty">Nenhuma entrada extra lançada.</li>
+          </ul>
         </div>
 
-        <div class="panel__block">
-          <h2>2. Lançar gasto</h2>
+        <div class="card">
+          <div class="card__head"><h2>Gastos do dia a dia</h2></div>
           <form id="expense-form" class="form">
             <label class="field">
               <span>Descrição</span>
-              <input type="text" id="expense-description" placeholder="Ex: Supermercado, aluguel, internet..." required />
+              <input type="text" id="expense-description" placeholder="Ex: mercado, aluguel, internet..." required />
             </label>
-
             <div class="field-row">
               <label class="field">
                 <span>Valor</span>
@@ -87,7 +184,6 @@
                   <input type="number" id="expense-amount" min="0.01" step="0.01" inputmode="decimal" placeholder="0,00" required />
                 </div>
               </label>
-
               <label class="field">
                 <span>Tipo</span>
                 <select id="expense-type">
@@ -96,19 +192,66 @@
                 </select>
               </label>
             </div>
-
             <button type="submit" class="btn btn--primary">Adicionar gasto</button>
           </form>
-        </div>
 
-        <div class="panel__block">
-          <h2>3. Faturas e parcelas</h2>
+          <ul class="items" id="expense-list">
+            <li class="empty" id="expense-empty">Nenhum gasto lançado ainda.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- PAINEL: ASSINATURAS -->
+      <section class="panel-view" id="panel-assinaturas" role="tabpanel" aria-labelledby="tab-assinaturas" data-panel="assinaturas" hidden>
+        <div class="card">
+          <div class="card__head">
+            <h2>Assinaturas e streaming</h2>
+            <p class="card__sub">Cobranças mensais recorrentes. Entram cheias no total do mês.</p>
+          </div>
+          <form id="subscription-form" class="form">
+            <label class="field">
+              <span>Serviço</span>
+              <input type="text" id="subscription-name" placeholder="Ex: Netflix, Spotify, academia..." required />
+            </label>
+            <div class="field-row">
+              <label class="field">
+                <span>Valor mensal</span>
+                <div class="input-money">
+                  <span>R$</span>
+                  <input type="number" id="subscription-amount" min="0.01" step="0.01" inputmode="decimal" placeholder="0,00" required />
+                </div>
+              </label>
+              <label class="field">
+                <span>Dia de cobrança</span>
+                <input type="number" id="subscription-day" min="1" max="31" step="1" inputmode="numeric" placeholder="opcional" />
+              </label>
+            </div>
+            <button type="submit" class="btn btn--primary">Adicionar assinatura</button>
+          </form>
+
+          <div class="total-line">
+            <span>Total mensal em assinaturas</span>
+            <strong id="subs-total">R$ 0,00</strong>
+          </div>
+
+          <ul class="items" id="subscription-list">
+            <li class="empty" id="subscription-empty">Nenhuma assinatura cadastrada.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- PAINEL: FATURAS -->
+      <section class="panel-view" id="panel-faturas" role="tabpanel" aria-labelledby="tab-faturas" data-panel="faturas" hidden>
+        <div class="card">
+          <div class="card__head">
+            <h2>Faturas e parcelas</h2>
+            <p class="card__sub">O valor parcelado entra no mês dividido pelo número de parcelas.</p>
+          </div>
           <form id="invoice-form" class="form">
             <label class="field">
               <span>Descrição da fatura</span>
-              <input type="text" id="invoice-description" placeholder="Ex: Cartão, energia, escola..." required />
+              <input type="text" id="invoice-description" placeholder="Ex: cartão, energia, escola..." required />
             </label>
-
             <label class="field">
               <span>Valor total</span>
               <div class="input-money">
@@ -116,79 +259,28 @@
                 <input type="number" id="invoice-total" min="0.01" step="0.01" inputmode="decimal" placeholder="0,00" required />
               </div>
             </label>
-
             <div class="field-row">
               <label class="field">
                 <span>Vencimento</span>
                 <input type="date" id="invoice-due-date" required />
               </label>
-
               <label class="field">
                 <span>Parcelas</span>
-                <input type="number" id="invoice-installments" min="1" step="1" value="1" required />
+                <input type="number" id="invoice-installments" min="1" step="1" value="1" inputmode="numeric" required />
               </label>
             </div>
-
             <button type="submit" class="btn btn--primary">Adicionar fatura</button>
           </form>
-        </div>
-      </section>
 
-      <section class="receipt" aria-live="polite">
-        <div class="receipt__paper">
-          <p class="receipt__label">saldo disponível</p>
-          <p class="receipt__balance" id="balance-amount">R$ 0,00</p>
-          <p class="receipt__hint" id="balance-hint">Informe seu salário para começar.</p>
-
-          <div class="receipt__divider"></div>
-
-          <div class="receipt__row">
-            <span>Salário</span>
-            <span id="summary-salary">R$ 0,00</span>
-          </div>
-          <div class="receipt__row">
-            <span>Gastos fixos</span>
-            <span id="summary-fixed">R$ 0,00</span>
-          </div>
-          <div class="receipt__row">
-            <span>Gastos variáveis</span>
-            <span id="summary-variable">R$ 0,00</span>
-          </div>
-          <div class="receipt__row">
-            <span>Parcelas / faturas</span>
-            <span id="summary-invoices">R$ 0,00</span>
-          </div>
-          <div class="receipt__row receipt__row--total">
-            <span>Total de gastos</span>
-            <span id="summary-total">R$ 0,00</span>
-          </div>
-
-          <div class="receipt__divider receipt__divider--dashed"></div>
-
-          <div class="receipt__items-header">
-            <p class="receipt__label">itens lançados</p>
-            <button type="button" class="link-btn" id="clear-data">Limpar dados</button>
-          </div>
-          <ul class="receipt__items" id="expense-list">
-            <li class="receipt__empty" id="expense-empty">Nenhum gasto lançado ainda.</li>
-          </ul>
-
-          <div class="receipt__divider"></div>
-
-          <div class="receipt__items-header">
-            <p class="receipt__label">faturas</p>
-          </div>
-          <ul class="receipt__items" id="invoice-list">
-            <li class="receipt__empty" id="invoice-empty">Nenhuma fatura lançada.</li>
+          <ul class="items" id="invoice-list">
+            <li class="empty" id="invoice-empty">Nenhuma fatura lançada.</li>
           </ul>
         </div>
-        <div class="receipt__tear"></div>
       </section>
     </main>
 
     <p class="footnote">
-      Seus dados agora são salvos por usuário quando o backend estiver ativo.
-      Se você usar localmente, primeiro faça login ou crie uma conta.
+      Seus dados são salvos por usuário. Cada conta vê apenas o próprio saldo.
     </p>
   </div>
 
