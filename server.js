@@ -115,14 +115,81 @@ async function saveJsonFile(filePath, data) {
   await fs.writeFile(filePath, JSON.stringify(data, null, 2), "utf-8");
 }
 
-async function loadUsers() {
+async function loadUsersFromFile() {
   return (await loadJsonFile(USERS_FILE, [])).filter(
     (user) => user && user.id && user.username && user.passwordHash
   );
 }
 
-async function saveUsers(users) {
+async function saveUsersToFile(users) {
   await saveJsonFile(USERS_FILE, users);
+}
+
+// Busca um usuário pelo username (case-insensitive). Usa Supabase quando
+// configurado (produção/Vercel); cai para arquivo local só em dev sem Supabase.
+async function findUserByUsername(username) {
+  if (supabase) {
+    const { data, error } = await supabase
+      .from("users")
+      .select("id, username, password_hash")
+      .ilike("username", username.trim())
+      .maybeSingle();
+
+    if (error) {
+      console.error("Falha ao buscar usuário no Supabase:", error);
+      return null;
+    }
+    if (!data) return null;
+    return { id: data.id, username: data.username, passwordHash: data.password_hash };
+  }
+
+  const users = await loadUsersFromFile();
+  return (
+    users.find((item) => item.username.toLowerCase() === username.trim().toLowerCase()) || null
+  );
+}
+
+async function findUserById(userId) {
+  if (supabase) {
+    const { data, error } = await supabase
+      .from("users")
+      .select("id, username, password_hash")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (error || !data) return null;
+    return { id: data.id, username: data.username, passwordHash: data.password_hash };
+  }
+
+  const users = await loadUsersFromFile();
+  return users.find((user) => user.id === userId) || null;
+}
+
+async function createUser(user) {
+  if (supabase) {
+    const { error } = await supabase.from("users").insert({
+      id: user.id,
+      username: user.username,
+      password_hash: user.passwordHash,
+    });
+
+    if (error) {
+      // 23505 = violação de unique constraint (username duplicado)
+      if (error.code === "23505") {
+        throw new Error("DUPLICATE_USERNAME");
+      }
+      console.error("Falha ao criar usuário no Supabase:", error);
+      throw error;
+    }
+    return;
+  }
+
+  const users = await loadUsersFromFile();
+  if (users.some((item) => item.username.toLowerCase() === user.username.toLowerCase())) {
+    throw new Error("DUPLICATE_USERNAME");
+  }
+  users.push(user);
+  await saveUsersToFile(users);
 }
 
 function userStateFile(userId) {
@@ -200,8 +267,7 @@ async function requireAuth(req, res, next) {
     return res.status(401).json({ error: "Não autenticado" });
   }
 
-  const users = await loadUsers();
-  const user = users.find((item) => item.id === userId) || null;
+  const user = await findUserById(userId);
   if (!user) {
     return res.status(401).json({ error: "Não autenticado" });
   }
@@ -213,8 +279,7 @@ async function requireAuth(req, res, next) {
 async function getUserFromToken(req) {
   const userId = getUserIdFromRequest(req);
   if (!userId) return null;
-  const users = await loadUsers();
-  return users.find((user) => user.id === userId) || null;
+  return findUserById(userId);
 }
 
 app.post("/api/register", async (req, res) => {
@@ -226,9 +291,8 @@ app.post("/api/register", async (req, res) => {
     });
   }
 
-  const normalizedUsername = username.trim().toLowerCase();
-  const users = await loadUsers();
-  if (users.some((user) => user.username.toLowerCase() === normalizedUsername)) {
+  const existing = await findUserByUsername(username);
+  if (existing) {
     return res.status(409).json({ error: "Usuário já existe." });
   }
 
@@ -240,8 +304,16 @@ app.post("/api/register", async (req, res) => {
     passwordHash,
   };
 
-  users.push(user);
-  await saveUsers(users);
+  try {
+    await createUser(user);
+  } catch (error) {
+    if (error.message === "DUPLICATE_USERNAME") {
+      return res.status(409).json({ error: "Usuário já existe." });
+    }
+    console.error("Falha ao registrar usuário:", error);
+    return res.status(500).json({ error: "Falha ao criar conta." });
+  }
+
   const token = createToken(user.id);
 
   res.json({
@@ -257,10 +329,7 @@ app.post("/api/login", async (req, res) => {
     return res.status(400).json({ error: "Usuário e senha inválidos." });
   }
 
-  const users = await loadUsers();
-  const user = users.find(
-    (item) => item.username.toLowerCase() === username.trim().toLowerCase()
-  );
+  const user = await findUserByUsername(username);
 
   if (!user) {
     return res.status(401).json({ error: "Usuário ou senha incorretos." });
