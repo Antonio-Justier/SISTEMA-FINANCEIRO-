@@ -1,0 +1,16 @@
+{
+  "name": "Financeiro",
+  "short_name": "Financeiro",
+  "description": "Controle de gastos pessoais com persistência local e backend.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f3ec",
+  "theme_color": "#1f6f54",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    }
+  ]
+}
