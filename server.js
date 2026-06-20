@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const helmet = require("helmet");
+const cors = require("cors");
 const bcrypt = require("bcrypt");
 const session = require("express-session");
 const fs = require("fs").promises;
@@ -24,6 +25,13 @@ const DEFAULT_STATE = {
 };
 
 app.disable("x-powered-by");
+app.set("trust proxy", 1);
+app.use(
+  cors({
+    origin: true,
+    credentials: true,
+  })
+);
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -51,7 +59,8 @@ app.use(
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      sameSite: "lax",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      secure: process.env.NODE_ENV === "production",
     },
   })
 );

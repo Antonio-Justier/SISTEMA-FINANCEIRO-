@@ -1,7 +1,10 @@
 const STORAGE_KEY = "controle-financeiro:state";
 const USE_BACKEND = true;
-const API_URL = "/api/state";
-const API_AUTH = "/api";
+
+const BACKEND_URL = typeof BACKEND_URL !== "undefined" ? String(BACKEND_URL).trim().replace(/\/+$/, "") : "";
+const API_BASE = BACKEND_URL || "";
+const API_URL = `${API_BASE}/api/state`;
+const API_AUTH = `${API_BASE}/api`;
 
 let state = {
   salary: 0,
@@ -56,7 +59,7 @@ async function getSession() {
   try {
     const response = await fetch(`${API_AUTH}/session`, {
       cache: "no-store",
-      credentials: "same-origin",
+      credentials: "include",
     });
     if (!response.ok) return { authenticated: false };
     return await response.json();
@@ -69,7 +72,7 @@ async function loadBackendState() {
   try {
     const response = await fetch(API_URL, {
       cache: "no-store",
-      credentials: "same-origin",
+      credentials: "include",
     });
     if (!response.ok) return null;
     const parsed = await response.json();
@@ -109,7 +112,7 @@ async function saveBackendState() {
   try {
     await fetch(API_URL, {
       method: "POST",
-      credentials: "same-origin",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(state),
     });
@@ -121,7 +124,7 @@ async function saveBackendState() {
 async function authRequest(path, options = {}) {
   try {
     const response = await fetch(`${API_AUTH}${path}`, {
-      credentials: "same-origin",
+      credentials: "include",
       ...options,
     });
     return response;
@@ -326,7 +329,15 @@ async function login() {
     body: JSON.stringify({ username: email, password }),
   });
 
-  if (!response || !response.ok) {
+  if (!response) {
+    showAuthMessage(
+      "Não foi possível conectar ao backend. Rode o servidor com npm start e abra a página via localhost.",
+      true
+    );
+    return;
+  }
+
+  if (!response.ok) {
     showAuthMessage("Falha ao entrar. Verifique usuário e senha.");
     return;
   }
