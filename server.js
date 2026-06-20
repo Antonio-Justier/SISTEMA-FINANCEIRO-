@@ -23,7 +23,9 @@ const JWT_EXPIRY = "7d";
 
 const DEFAULT_STATE = {
   salary: 0,
+  incomes: [],
   expenses: [],
+  subscriptions: [],
   invoices: [],
 };
 
@@ -44,7 +46,7 @@ app.use(
         "script-src": ["'self'"],
         "style-src": ["'self'", "https://fonts.googleapis.com"],
         "font-src": ["'self'", "https://fonts.gstatic.com"],
-        "img-src": ["'self'"],
+        "img-src": ["'self'", "data:"],
         "connect-src": ["'self'"],
         "manifest-src": ["'self'"],
         "object-src": ["'none'"],
@@ -54,42 +56,82 @@ app.use(
     },
   })
 );
-app.use(express.json({ limit: "50kb" }));
+app.use(express.json({ limit: "100kb" }));
 app.use(express.static(path.join(__dirname)));
 
-function isValidState(value) {
+// --- Validações de cada tipo ---
+function isValidExpense(expense) {
   return (
-    value &&
-    typeof value === "object" &&
-    typeof value.salary === "number" &&
-    Array.isArray(value.expenses) &&
-    Array.isArray(value.invoices) &&
-    value.expenses.every(
-      (expense) =>
-        expense &&
-        typeof expense.id === "string" &&
-        typeof expense.description === "string" &&
-        typeof expense.amount === "number" &&
-        (expense.type === "FIXO" || expense.type === "VARIAVEL")
-    ) &&
-    value.invoices.every(
-      (invoice) =>
-        invoice &&
-        typeof invoice.id === "string" &&
-        typeof invoice.description === "string" &&
-        typeof invoice.total === "number" &&
-        typeof invoice.dueDate === "string" &&
-        typeof invoice.installments === "number" &&
-        invoice.installments >= 1
-    )
+    expense &&
+    typeof expense.id === "string" &&
+    typeof expense.description === "string" &&
+    typeof expense.amount === "number" &&
+    (expense.type === "FIXO" || expense.type === "VARIAVEL")
   );
 }
 
+function isValidInvoice(invoice) {
+  return (
+    invoice &&
+    typeof invoice.id === "string" &&
+    typeof invoice.description === "string" &&
+    typeof invoice.total === "number" &&
+    typeof invoice.dueDate === "string" &&
+    typeof invoice.installments === "number" &&
+    invoice.installments >= 1
+  );
+}
+
+function isValidIncome(income) {
+  return (
+    income &&
+    typeof income.id === "string" &&
+    typeof income.description === "string" &&
+    typeof income.amount === "number"
+  );
+}
+
+function isValidSubscription(sub) {
+  return (
+    sub &&
+    typeof sub.id === "string" &&
+    typeof sub.name === "string" &&
+    typeof sub.amount === "number"
+  );
+}
+
+function isValidState(value) {
+  if (!value || typeof value !== "object") return false;
+  if (typeof value.salary !== "number") return false;
+  if (!Array.isArray(value.expenses) || !value.expenses.every(isValidExpense)) return false;
+  if (!Array.isArray(value.invoices) || !value.invoices.every(isValidInvoice)) return false;
+
+  // Campos novos são opcionais (compatibilidade com estados antigos),
+  // mas se vierem, precisam estar no formato correto.
+  if (value.incomes !== undefined) {
+    if (!Array.isArray(value.incomes) || !value.incomes.every(isValidIncome)) return false;
+  }
+  if (value.subscriptions !== undefined) {
+    if (!Array.isArray(value.subscriptions) || !value.subscriptions.every(isValidSubscription)) return false;
+  }
+  return true;
+}
+
 function isValidUsername(value) {
-  return typeof value === "string" && value.trim().length > 0;
+  return typeof value === "string" && value.trim().length >= 3;
 }
 
 function isValidPassword(value) {
+  return typeof value === "string" && value.length >= 6;
+}
+
+// Login não deve aplicar os mínimos de cadastro: contas antigas podem ter
+// credenciais mais curtas. Aqui só validamos presença para não travar o login.
+function isPresentUsername(value) {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function isPresentPassword(value) {
   return typeof value === "string" && value.length > 0;
 }
 
@@ -314,6 +356,14 @@ app.post("/api/register", async (req, res) => {
     return res.status(500).json({ error: "Falha ao criar conta." });
   }
 
+  // Garante que a conta nova começa com estado limpo no backend.
+  try {
+    await writeStateFile(user.id, DEFAULT_STATE);
+    if (supabase) await saveSupabaseState(user.id, DEFAULT_STATE);
+  } catch (error) {
+    console.error("Falha ao inicializar estado do novo usuário:", error);
+  }
+
   const token = createToken(user.id);
 
   res.json({
@@ -325,7 +375,7 @@ app.post("/api/register", async (req, res) => {
 app.post("/api/login", async (req, res) => {
   const { username, password } = req.body;
 
-  if (!isValidUsername(username) || !isValidPassword(password)) {
+  if (!isPresentUsername(username) || !isPresentPassword(password)) {
     return res.status(400).json({ error: "Usuário e senha inválidos." });
   }
 
@@ -367,7 +417,8 @@ app.get("/api/state", requireAuth, async (req, res) => {
       state = supabaseState;
     }
   }
-  res.json(state);
+  // Sempre devolve com os campos esperados preenchidos.
+  res.json({ ...DEFAULT_STATE, ...state });
 });
 
 app.post("/api/state", requireAuth, async (req, res) => {
