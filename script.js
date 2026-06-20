@@ -1,8 +1,9 @@
 const STORAGE_KEY = "controle-financeiro:state";
+const TOKEN_KEY = "controle-financeiro:token";
 const USE_BACKEND = true;
 
 const BACKEND_URL = typeof BACKEND_URL !== "undefined" ? String(BACKEND_URL).trim().replace(/\/+$/, "") : "";
-const API_BASE = BACKEND_URL || "https://sistema-financeiro-tan.vercel.app";
+const API_BASE = BACKEND_URL || "";
 const API_URL = `${API_BASE}/api/state`;
 const API_AUTH = `${API_BASE}/api`;
 
@@ -13,6 +14,7 @@ let state = {
 };
 
 let currentUser = null;
+let currentToken = "";
 
 const currency = new Intl.NumberFormat("pt-BR", {
   style: "currency",
@@ -55,11 +57,29 @@ function loadLocalState() {
   }
 }
 
+function getToken() {
+  return localStorage.getItem(TOKEN_KEY) || "";
+}
+
+function setToken(token) {
+  currentToken = token || "";
+  if (currentToken) {
+    localStorage.setItem(TOKEN_KEY, currentToken);
+  } else {
+    localStorage.removeItem(TOKEN_KEY);
+  }
+}
+
 async function getSession() {
+  const token = getToken();
+  if (!token) return { authenticated: false };
+
   try {
     const response = await fetch(`${API_AUTH}/session`, {
       cache: "no-store",
-      credentials: "include",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
     if (!response.ok) return { authenticated: false };
     return await response.json();
@@ -69,10 +89,15 @@ async function getSession() {
 }
 
 async function loadBackendState() {
+  const token = getToken();
+  if (!token) return null;
+
   try {
     const response = await fetch(API_URL, {
       cache: "no-store",
-      credentials: "include",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
     if (!response.ok) return null;
     const parsed = await response.json();
@@ -109,11 +134,16 @@ function saveLocalState() {
 }
 
 async function saveBackendState() {
+  const token = getToken();
+  if (!token) return;
+
   try {
     await fetch(API_URL, {
       method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify(state),
     });
   } catch {
@@ -122,10 +152,16 @@ async function saveBackendState() {
 }
 
 async function authRequest(path, options = {}) {
+  const token = getToken();
+  const headers = {
+    ...(options.headers || {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+
   try {
     const response = await fetch(`${API_AUTH}${path}`, {
-      credentials: "include",
       ...options,
+      headers,
     });
     return response;
   } catch {
@@ -343,6 +379,7 @@ async function login() {
   }
 
   const data = await response.json();
+  setToken(data.token);
   setAuthenticated(data.user);
   await reloadState();
   showAuthMessage("Entrou com sucesso.", false);
@@ -369,13 +406,14 @@ async function register() {
   }
 
   const data = await response.json();
+  setToken(data.token);
   setAuthenticated(data.user);
   await reloadState();
   showAuthMessage("Conta criada com sucesso.", false);
 }
 
 async function logout() {
-  await authRequest("/logout", { method: "POST" });
+  setToken("");
   setAuthenticated(null);
   state = { salary: 0, expenses: [], invoices: [] };
   render();
