@@ -199,8 +199,7 @@ h1 {
 #invoice-form .field-row input {
   min-width: 0;
 }
-/* iOS: o input[type=date] tem largura intrínseca grande que ignora o
-   min-width; força encolher e ocupar a coluna sem transbordar. */
+/* iOS: input[type=date] tem largura intrínseca grande; força encolher. */
 #invoice-form input[type="date"] {
   -webkit-appearance: none;
   appearance: none;
@@ -208,7 +207,6 @@ h1 {
   width: 100%;
   box-sizing: border-box;
 }
-/* Em telas estreitas, empilha Vencimento e Parcelas (acaba o aperto). */
 @media (max-width: 380px) {
   #invoice-form .field-row { grid-template-columns: 1fr; }
 }
@@ -558,7 +556,7 @@ select:focus {
   background: var(--bg-2);
 }
 .item__info { display: grid; gap: 4px; min-width: 0; }
-.item__desc { font-weight: 500; overflow-wrap: anywhere; }
+.item__desc { font-weight: 500; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .item__tag {
   justify-self: start;
   max-width: 100%;
@@ -712,6 +710,67 @@ select:focus {
   .donut-wrap { margin: 0; }
   .auth-actions .btn { flex: 0 1 auto; }
 }
+
+/* ---------- Deslizar para remover ---------- */
+.swipe-row {
+  position: relative;
+  list-style: none;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.swipe-row + .swipe-row { margin-top: 8px; }
+.swipe-content {
+  position: relative;
+  z-index: 1;
+  touch-action: pan-y;
+  transition: transform 0.18s ease;
+  will-change: transform;
+}
+.swipe-row.is-dragging .swipe-content { transition: none; }
+.swipe-delete {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 96px;
+  border: none;
+  background: var(--danger);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  z-index: 0;
+}
+.swipe-hint {
+  margin: 4px 2px 0;
+  font-size: 0.72rem;
+  color: var(--muted-2);
+}
+
+/* ---------- Zona de perigo (excluir conta) ---------- */
+.danger-zone {
+  margin-top: 18px;
+  padding: 14px;
+  border: 1px solid #5a2a28;
+  border-radius: var(--radius-sm);
+  background: #1c1413;
+}
+.danger-zone__label {
+  display: block;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #e09a96;
+  margin-bottom: 4px;
+}
+.danger-zone__desc { font-size: 0.78rem; color: var(--muted); margin: 0 0 10px; }
+.btn--danger {
+  background: transparent;
+  border: 1px solid var(--danger);
+  color: #ff9c95;
+}
+.btn--danger:hover { background: var(--danger); color: #fff; }
 
 /* ---------- Relatório (impressão / "Salvar como PDF") ---------- */
 #print-report { display: none; }
