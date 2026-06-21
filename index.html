@@ -1,794 +1,358 @@
-/* =========================================================
-   Financeiro — tema preto/verde (tonalidade do logo #1f6f54)
-   Mobile-first. Sem estilos inline (a CSP do backend só
-   permite folhas de estilo servidas pela própria origem).
-   ========================================================= */
-
-:root {
-  --bg: #080b0a;
-  --bg-2: #0c1210;
-  --surface: #10171400;
-  --card: #0f1714;
-  --card-2: #142019;
-  --line: #213029;
-  --line-soft: #18241e;
-
-  --green: #1f6f54;          /* verde do logo */
-  --green-bright: #2fd08a;   /* destaque vivo derivado do logo */
-  --green-soft: #173f31;
-
-  --text: #e9f1ec;
-  --muted: #88a094;
-  --muted-2: #5f756b;
-
-  --ok: #2fd08a;
-  --warn: #f2c14e;
-  --danger: #f0625a;
-
-  --display: "Fraunces", Georgia, serif;
-  --body: "Inter", system-ui, -apple-system, sans-serif;
-  --mono: "IBM Plex Mono", ui-monospace, monospace;
-
-  --radius: 16px;
-  --radius-sm: 11px;
-  --shadow: 0 18px 40px -24px rgba(0, 0, 0, 0.9);
-}
-
-* { box-sizing: border-box; }
-
-html { -webkit-text-size-adjust: 100%; }
-
-body {
-  margin: 0;
-  min-height: 100vh;
-  font-family: var(--body);
-  color: var(--text);
-  background:
-    radial-gradient(1100px 540px at 50% -10%, rgba(31, 111, 84, 0.22), transparent 60%),
-    radial-gradient(700px 420px at 100% 0%, rgba(47, 208, 138, 0.08), transparent 55%),
-    var(--bg);
-  line-height: 1.5;
-}
-
-.page {
-  width: min(960px, 100%);
-  margin: 0 auto;
-  padding: 28px 18px 56px;
-}
-
-/* ---------- Cabeçalho ---------- */
-.page__header { margin-bottom: 22px; }
-
-.eyebrow {
-  margin: 0 0 6px;
-  font-family: var(--mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--green-bright);
-}
-
-h1 {
-  margin: 0;
-  font-family: var(--display);
-  font-weight: 600;
-  font-size: clamp(1.9rem, 6vw, 2.75rem);
-  letter-spacing: -0.02em;
-}
-
-.subtitle {
-  margin: 8px 0 0;
-  max-width: 52ch;
-  color: var(--muted);
-}
-
-.auth-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 16px;
-  padding: 10px 14px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  background: var(--card);
-  font-size: 0.92rem;
-}
-.auth-bar[hidden] { display: none; }
-#auth-user { color: var(--muted); }
-
-/* ---------- Botões ---------- */
-.btn {
-  appearance: none;
-  border: 1px solid transparent;
-  border-radius: 11px;
-  padding: 12px 18px;
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.05s ease, background 0.15s ease, border-color 0.15s ease;
-}
-.btn:active { transform: translateY(1px); }
-
-.btn--primary {
-  background: var(--green-bright);
-  color: #04130d;
-}
-.btn--primary:hover { background: #45e0a0; }
-
-.btn--secondary {
-  background: transparent;
-  border-color: var(--line);
-  color: var(--text);
-}
-.btn--secondary:hover { border-color: var(--green); }
-
-.btn--ghost {
-  background: transparent;
-  border-color: var(--line);
-  color: var(--muted);
-  padding: 8px 14px;
-}
-.btn--ghost:hover { color: var(--text); border-color: var(--green); }
-
-.btn--end { align-self: end; }
-
-.link-btn {
-  background: none;
-  border: none;
-  padding: 0;
-  font: inherit;
-  font-size: 0.82rem;
-  color: var(--muted);
-  cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-.link-btn:hover { color: var(--danger); }
-
-/* ---------- Formulários ---------- */
-.auth-panel {
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--card);
-  padding: 22px;
-  box-shadow: var(--shadow);
-}
-.auth-panel[hidden] { display: none; }
-
-.panel__block h2,
-.card h2 {
-  margin: 0;
-  font-family: var(--display);
-  font-weight: 600;
-  font-size: 1.18rem;
-}
-
-.form { display: grid; gap: 14px; margin-top: 14px; }
-.form--inset {
-  margin-top: 18px;
-  padding-top: 18px;
-  border-top: 1px dashed var(--line);
-}
-
-.field { display: grid; gap: 6px; }
-.field > span {
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  color: var(--muted);
-  text-transform: uppercase;
-}
-
-.field-row {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 12px;
-  align-items: end;
-}
-.field-row .field { min-width: 0; }
-
-/* Faturas: "Vencimento" (input de data) + "Parcelas" lado a lado.
-   O input de data tem largura mínima nativa (iOS/Safari) que ignora o
-   min-width do .field; em telas estreitas ele transbordava sobre o campo
-   de parcelas. Aqui damos uma coluna estreita e fixa para parcelas e
-   forçamos a data a poder encolher. */
-#invoice-form .field-row {
-  grid-template-columns: minmax(0, 1fr) 96px;
-}
-#invoice-form .field-row input {
-  min-width: 0;
-}
-/* iOS: input[type=date] tem largura intrínseca grande; força encolher. */
-#invoice-form input[type="date"] {
-  -webkit-appearance: none;
-  appearance: none;
-  min-width: 0;
-  width: 100%;
-  box-sizing: border-box;
-}
-@media (max-width: 380px) {
-  #invoice-form .field-row { grid-template-columns: 1fr; }
-}
-
-input,
-select {
-  width: 100%;
-  padding: 12px 13px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  background: var(--bg-2);
-  color: var(--text);
-  font: inherit;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-input::placeholder { color: var(--muted-2); }
-input:focus,
-select:focus {
-  outline: none;
-  border-color: var(--green-bright);
-  box-shadow: 0 0 0 3px rgba(47, 208, 138, 0.18);
-}
-
-.input-money {
-  display: flex;
-  align-items: center;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  background: var(--bg-2);
-  overflow: hidden;
-}
-.input-money:focus-within {
-  border-color: var(--green-bright);
-  box-shadow: 0 0 0 3px rgba(47, 208, 138, 0.18);
-}
-.input-money > span {
-  padding: 0 12px;
-  color: var(--muted);
-  font-family: var(--mono);
-  border-right: 1px solid var(--line);
-}
-.input-money input {
-  border: none;
-  background: transparent;
-  border-radius: 0;
-}
-.input-money input:focus { box-shadow: none; }
-
-.auth-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-.auth-actions .btn { flex: 1 1 auto; }
-
-.auth-message { margin: 4px 0 0; font-size: 0.88rem; min-height: 1.1em; }
-.auth-message--error { color: var(--danger); }
-.auth-message--success { color: var(--ok); }
-
-/* ---------- App ---------- */
-.app { display: grid; gap: 18px; }
-.app[hidden] { display: none; }
-
-/* ---------- Hero / saldo ---------- */
-.hero {
-  position: relative;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background:
-    linear-gradient(180deg, rgba(47, 208, 138, 0.05), transparent 40%),
-    var(--card);
-  padding: 22px;
-  overflow: hidden;
-}
-.hero::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 3px;
-  background: var(--state-color, var(--green-bright));
-  transition: background 0.3s ease;
-}
-
-.month-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 14px;
-}
-.month-nav__btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--card-2);
-  color: var(--text);
-  font-size: 1.2rem;
-  line-height: 1;
-  cursor: pointer;
-  transition: border-color 0.2s ease, color 0.2s ease;
-}
-.month-nav__btn:hover { border-color: var(--green); color: var(--green-bright); }
-.month-nav__btn:active { transform: translateY(1px); }
-.month-nav__label {
-  font-family: var(--mono);
-  font-weight: 600;
-  font-size: 0.95rem;
-  letter-spacing: 0.04em;
-  text-transform: capitalize;
-  color: var(--text);
-}
-
-.hero__label {
-  margin: 0;
-  font-family: var(--mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-.hero__balance {
-  margin: 6px 0 14px;
-  font-family: var(--mono);
-  font-weight: 600;
-  font-size: clamp(2.3rem, 9vw, 3.4rem);
-  letter-spacing: -0.02em;
-  color: var(--state-color, var(--green-bright));
-  transition: color 0.3s ease;
-}
-
-.hero__bar {
-  height: 9px;
-  border-radius: 99px;
-  background: var(--line-soft);
-  overflow: hidden;
-}
-.hero__bar-fill {
-  display: block;
-  height: 100%;
-  width: 0%;
-  border-radius: 99px;
-  background: var(--state-color, var(--green-bright));
-  transition: width 0.4s ease, background 0.3s ease;
-}
-
-.hero__hint {
-  margin: 12px 0 0;
-  font-size: 0.9rem;
-  color: var(--muted);
-}
-.hero__proj {
-  margin: 8px 0 0;
-  font-size: 0.84rem;
-  font-family: var(--mono);
-  color: var(--state-color, var(--green-bright));
-  opacity: 0.92;
-}
-.hero__proj[hidden] { display: none; }
-
-.hero__stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin-top: 18px;
-  padding-top: 16px;
-  border-top: 1px solid var(--line-soft);
-}
-.hero__stat { display: grid; gap: 3px; }
-.hero__stat-label {
-  font-size: 0.68rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--muted-2);
-}
-.hero__stat-value { font-family: var(--mono); font-weight: 600; }
-
-/* Estados de cor do saldo */
-.hero.is-ok      { --state-color: var(--ok); }
-.hero.is-warn    { --state-color: var(--warn); }
-.hero.is-danger  { --state-color: var(--danger); }
-
-/* ---------- Abas ---------- */
-.tabs {
-  display: flex;
-  gap: 4px;
-  padding: 4px;
-  border: 1px solid var(--line);
-  border-radius: 13px;
-  background: var(--card);
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.tabs::-webkit-scrollbar { display: none; }
-
-.tab {
-  flex: 1 0 auto;
-  appearance: none;
-  border: none;
-  background: transparent;
-  color: var(--muted);
-  font: inherit;
-  font-weight: 600;
-  font-size: 0.92rem;
-  padding: 10px 14px;
-  border-radius: 9px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-.tab:hover { color: var(--text); }
-.tab.is-active {
-  background: var(--green-soft);
-  color: #d7f7e8;
-}
-
-/* ---------- Painéis ---------- */
-.panel-view { display: grid; gap: 18px; }
-.panel-view[hidden] { display: none; }
-
-.card {
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--card);
-  padding: 20px;
-}
-.card__head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-.card__sub {
-  width: 100%;
-  margin: 6px 0 0;
-  font-size: 0.86rem;
-  color: var(--muted);
-}
-
-/* ---------- Gráfico donut ---------- */
-.chart-row {
-  display: flex;
-  align-items: center;
-  gap: 22px;
-  flex-wrap: wrap;
-  margin-top: 16px;
-}
-.donut-wrap {
-  position: relative;
-  width: 180px;
-  height: 180px;
-  flex: 0 0 auto;
-  margin: 0 auto;
-}
-.donut-wrap canvas { width: 180px; height: 180px; display: block; }
-.donut-center {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-content: center;
-  text-align: center;
-  pointer-events: none;
-}
-.donut-center__label {
-  display: block;
-  font-size: 0.66rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--muted-2);
-}
-.donut-center__value { font-family: var(--mono); font-weight: 600; font-size: 1.05rem; }
-
-.legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; flex: 1 1 180px; }
-.legend li { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; }
-.legend .dot { width: 11px; height: 11px; border-radius: 4px; flex: 0 0 auto; }
-.legend .legend-name { color: var(--muted); }
-.legend .legend-value { margin-left: auto; font-family: var(--mono); font-weight: 600; }
-
-/* ---------- Barras receita x gasto ---------- */
-.meter { display: grid; gap: 14px; margin-top: 12px; }
-.meter__row { display: grid; gap: 6px; }
-.meter__top { display: flex; justify-content: space-between; font-size: 0.86rem; }
-.meter__top span:first-child { color: var(--muted); }
-.meter__top .meter__val { font-family: var(--mono); font-weight: 600; }
-.meter__track { height: 12px; border-radius: 99px; background: var(--line-soft); overflow: hidden; }
-.meter__fill { display: block; height: 100%; width: 0%; border-radius: 99px; transition: width 0.4s ease; }
-.meter__fill.is-income { background: var(--green-bright); }
-.meter__fill.is-expense { background: #6f7ce8; }
-.meter__fill.is-balance-ok { background: var(--ok); }
-.meter__fill.is-balance-warn { background: var(--warn); }
-.meter__fill.is-balance-danger { background: var(--danger); }
-
-/* ---------- Resumo (dl) ---------- */
-.summary { margin: 14px 0 0; display: grid; gap: 0; }
-.summary__row {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 0;
-  border-bottom: 1px dashed var(--line-soft);
-}
-.summary__row dt { margin: 0; color: var(--muted); }
-.summary__row dd { margin: 0; font-family: var(--mono); font-weight: 500; }
-.summary__row--total {
-  border-bottom: none;
-  border-top: 1px solid var(--line);
-  margin-top: 4px;
-  padding-top: 14px;
-  font-size: 1.05rem;
-}
-.summary__row--total dt { color: var(--text); font-weight: 600; }
-.summary__row--total dd { color: var(--green-bright); font-weight: 600; }
-
-/* ---------- Linha de total ---------- */
-.total-line {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  margin-top: 16px;
-  padding: 14px 16px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  background: var(--bg-2);
-}
-.total-line strong { font-family: var(--mono); font-size: 1.15rem; color: var(--green-bright); }
-
-/* ---------- Listas de itens ---------- */
-.items { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 8px; }
-.empty {
-  padding: 18px 14px;
-  text-align: center;
-  color: var(--muted-2);
-  font-size: 0.9rem;
-  border: 1px dashed var(--line);
-  border-radius: var(--radius-sm);
-}
-
-.item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 14px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  background: var(--bg-2);
-}
-.item__info { display: grid; gap: 4px; min-width: 0; }
-.item__desc { font-weight: 500; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.item__tag {
-  justify-self: start;
-  max-width: 100%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: 0.68rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--muted);
-  background: var(--card-2);
-  border: 1px solid var(--line);
-  padding: 2px 8px;
-  border-radius: 99px;
-}
-.item__tag.is-fixed { color: #cdd6ff; border-color: #2c3566; background: #181f3a; }
-.item__tag.is-income { color: #b9f5da; border-color: var(--green); background: var(--green-soft); }
-.item__tag.is-overdue { color: #ffd2cf; border-color: #5a2a28; background: #2a1816; }
-
-.item__right { display: grid; justify-items: end; gap: 2px; text-align: right; flex: 0 0 auto; }
-.item__amount { font-family: var(--mono); font-weight: 600; }
-.item__amount.is-income { color: var(--green-bright); }
-.item__small { font-size: 0.72rem; color: var(--muted); }
-
-.item__remove {
-  appearance: none;
-  border: 1px solid var(--line);
-  background: transparent;
-  color: var(--muted);
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  font-size: 1.1rem;
-  line-height: 1;
-  cursor: pointer;
-  margin-left: 6px;
-  flex: 0 0 auto;
-  transition: color 0.15s ease, border-color 0.15s ease;
-}
-.item__remove:hover { color: var(--danger); border-color: var(--danger); }
-
-/* item com botão remover ao lado da info+valor */
-.item--row { align-items: center; }
-
-/* ---------- Rodapé ---------- */
-.footnote {
-  margin: 26px 0 0;
-  text-align: center;
-  font-size: 0.8rem;
-  color: var(--muted-2);
-}
-
-/* ---------- Legenda empilhada (por categoria) ---------- */
-.legend--stack { margin-top: 8px; }
-.legend--stack li {
-  justify-content: space-between;
-  padding: 7px 0;
-  border-bottom: 1px solid var(--line-soft);
-}
-.legend--stack li:last-child { border-bottom: none; }
-.legend--stack .empty { border: none; padding: 8px 0; }
-
-/* ---------- Backup (export / import) ---------- */
-.backup-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--line-soft);
-}
-.backup-row .btn { flex: 1 1 140px; }
-
-/* ---------- Botão "encerrar" recorrência ---------- */
-.item__end {
-  appearance: none;
-  border: 1px solid var(--line);
-  background: transparent;
-  color: var(--muted);
-  font-size: 0.68rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  padding: 3px 8px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: color 0.2s ease, border-color 0.2s ease;
-}
-.item__end:hover { color: var(--warn); border-color: var(--warn); }
-
-/* ---------- Histórico mensal ---------- */
-.history { display: grid; gap: 10px; margin-top: 12px; }
-.hist-row {
-  display: grid;
-  gap: 8px;
-  width: 100%;
-  text-align: left;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  background: var(--card-2);
-  padding: 12px 14px;
-  cursor: pointer;
-  transition: border-color 0.2s ease, background 0.2s ease;
-}
-.hist-row:hover { border-color: var(--green); }
-.hist-row.is-current { border-color: var(--green-bright); background: var(--green-soft); }
-.hist-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
-.hist-month {
-  font-family: var(--mono);
-  font-weight: 600;
-  font-size: 0.9rem;
-  text-transform: capitalize;
-  color: var(--text);
-}
-.hist-balance { font-family: var(--mono); font-weight: 600; font-size: 0.9rem; }
-.hist-balance.is-ok { color: var(--ok); }
-.hist-balance.is-warn { color: var(--warn); }
-.hist-balance.is-danger { color: var(--danger); }
-.hist-bars { display: grid; gap: 4px; }
-.hist-bar { display: block; height: 7px; border-radius: 99px; width: 0%; transition: width 0.4s ease; }
-.hist-bar--in { background: var(--green-bright); }
-.hist-bar--out { background: #6f7ce8; }
-.hist-legend {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.72rem;
-  color: var(--muted);
-  font-family: var(--mono);
-}
-
-/* ---------- Acessibilidade ---------- */
-.visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-:focus-visible { outline: 2px solid var(--green-bright); outline-offset: 2px; }
-
-@media (prefers-reduced-motion: reduce) {
-  * { transition: none !important; animation: none !important; }
-}
-
-/* ---------- Desktop ---------- */
-@media (min-width: 720px) {
-  .page { padding: 40px 24px 64px; }
-  .donut-wrap { margin: 0; }
-  .auth-actions .btn { flex: 0 1 auto; }
-}
-
-/* ---------- Deslizar para remover ---------- */
-.swipe-row {
-  position: relative;
-  list-style: none;
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-}
-.swipe-row + .swipe-row { margin-top: 8px; }
-.swipe-content {
-  position: relative;
-  z-index: 1;
-  touch-action: pan-y;
-  transition: transform 0.18s ease;
-  will-change: transform;
-}
-.swipe-row.is-dragging .swipe-content { transition: none; }
-.swipe-delete {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 96px;
-  border: none;
-  background: var(--danger);
-  color: #fff;
-  font: inherit;
-  font-weight: 600;
-  font-size: 0.85rem;
-  cursor: pointer;
-  z-index: 0;
-}
-.swipe-hint {
-  margin: 4px 2px 0;
-  font-size: 0.72rem;
-  color: var(--muted-2);
-}
-
-/* ---------- Zona de perigo (excluir conta) ---------- */
-.danger-zone {
-  margin-top: 18px;
-  padding: 14px;
-  border: 1px solid #5a2a28;
-  border-radius: var(--radius-sm);
-  background: #1c1413;
-}
-.danger-zone__label {
-  display: block;
-  font-size: 0.7rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #e09a96;
-  margin-bottom: 4px;
-}
-.danger-zone__desc { font-size: 0.78rem; color: var(--muted); margin: 0 0 10px; }
-.btn--danger {
-  background: transparent;
-  border: 1px solid var(--danger);
-  color: #ff9c95;
-}
-.btn--danger:hover { background: var(--danger); color: #fff; }
-
-/* ---------- Relatório (impressão / "Salvar como PDF") ---------- */
-#print-report { display: none; }
-@media print {
-  body * { visibility: hidden; }
-  #print-report, #print-report * { visibility: visible; }
-  #print-report {
-    display: block;
-    position: absolute;
-    inset: 0;
-    padding: 24px;
-    color: #000;
-    background: #fff;
-    font-family: "Inter", system-ui, sans-serif;
-  }
-  #print-report h1 { font-size: 18px; margin: 0 0 4px; }
-  #print-report h2 { font-size: 13px; margin: 16px 0 6px; border-bottom: 1px solid #ccc; padding-bottom: 2px; }
-  #print-report p.muted { color: #555; font-size: 11px; margin: 0 0 8px; }
-  #print-report table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  #print-report td { padding: 3px 0; vertical-align: top; }
-}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quanto posso gastar?</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#0b0f0d" />
+  <meta name="application-name" content="Financeiro" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="icon" href="icon-192.png" type="image/png" />
+  <link rel="alternate icon" href="icon.svg" type="image/svg+xml" />
+</head>
+<body>
+  <div class="page">
+    <header class="page__header">
+      <p class="eyebrow">controle pessoal</p>
+      <h1>Quanto posso gastar?</h1>
+      <p class="subtitle" id="subtitle-text">Informe seu salário, lance os gastos do mês e veja na hora o que ainda pode gastar.</p>
+      <div class="auth-bar" id="auth-bar" hidden>
+        <span id="auth-user"></span>
+        <button type="button" class="btn btn--ghost" id="logout-button">Sair</button>
+      </div>
+    </header>
+
+    <section class="auth-panel" id="auth-panel">
+      <div class="panel__block">
+        <h2>Entrar ou criar conta</h2>
+        <form id="auth-form" class="form" autocomplete="on">
+          <label class="field">
+            <span>Usuário</span>
+            <input type="text" id="auth-email" placeholder="Nome de usuário ou email" autocomplete="username" required />
+          </label>
+          <label class="field">
+            <span>Senha</span>
+            <input type="password" id="auth-password" placeholder="Sua senha" autocomplete="current-password" required />
+          </label>
+
+          <div class="auth-actions">
+            <button type="submit" class="btn btn--primary" id="login-button">Entrar</button>
+            <button type="button" class="btn btn--secondary" id="register-button">Criar conta</button>
+          </div>
+          <p class="auth-message" id="auth-message"></p>
+        </form>
+      </div>
+    </section>
+
+    <main class="app" id="app-layout" hidden>
+      <!-- HERO: saldo sempre visível, com cor que muda conforme o quanto já foi gasto -->
+      <section class="hero" id="balance-card" aria-live="polite">
+        <div class="month-nav">
+          <button type="button" class="month-nav__btn" id="month-prev" aria-label="Mês anterior">‹</button>
+          <span class="month-nav__label" id="month-label">—</span>
+          <button type="button" class="month-nav__btn" id="month-next" aria-label="Próximo mês">›</button>
+        </div>
+        <p class="hero__label">ainda posso gastar</p>
+        <p class="hero__balance" id="balance-amount">R$ 0,00</p>
+        <div class="hero__bar" role="img" aria-label="Percentual da receita já comprometido">
+          <span class="hero__bar-fill" id="balance-bar"></span>
+        </div>
+        <p class="hero__hint" id="balance-hint">Informe seu salário para começar.</p>
+        <p class="hero__proj" id="proj-hint" hidden></p>
+        <div class="hero__stats">
+          <div class="hero__stat">
+            <span class="hero__stat-label">receita</span>
+            <span class="hero__stat-value" id="hero-income">R$ 0,00</span>
+          </div>
+          <div class="hero__stat">
+            <span class="hero__stat-label">comprometido</span>
+            <span class="hero__stat-value" id="hero-committed">R$ 0,00</span>
+          </div>
+          <div class="hero__stat">
+            <span class="hero__stat-label">já gasto</span>
+            <span class="hero__stat-value" id="hero-spent">R$ 0,00</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ABAS -->
+      <nav class="tabs" role="tablist" aria-label="Seções">
+        <button class="tab is-active" role="tab" id="tab-resumo" data-tab="resumo" aria-selected="true" aria-controls="panel-resumo">Resumo</button>
+        <button class="tab" role="tab" id="tab-gastos" data-tab="gastos" aria-selected="false" aria-controls="panel-gastos">Gastos</button>
+        <button class="tab" role="tab" id="tab-assinaturas" data-tab="assinaturas" aria-selected="false" aria-controls="panel-assinaturas">Assinaturas</button>
+        <button class="tab" role="tab" id="tab-faturas" data-tab="faturas" aria-selected="false" aria-controls="panel-faturas">Faturas</button>
+        <button class="tab" role="tab" id="tab-historico" data-tab="historico" aria-selected="false" aria-controls="panel-historico">Histórico</button>
+      </nav>
+
+      <!-- PAINEL: RESUMO -->
+      <section class="panel-view is-active" id="panel-resumo" role="tabpanel" aria-labelledby="tab-resumo" data-panel="resumo">
+        <div class="card">
+          <div class="card__head">
+            <h2>Para onde vai o dinheiro</h2>
+            <p class="card__sub">Composição dos gastos do mês.</p>
+          </div>
+          <div class="chart-row">
+            <div class="donut-wrap">
+              <canvas id="chart-donut" width="200" height="200" aria-label="Gráfico de composição dos gastos"></canvas>
+              <div class="donut-center">
+                <span class="donut-center__label">total</span>
+                <span class="donut-center__value" id="donut-total">R$ 0,00</span>
+              </div>
+            </div>
+            <ul class="legend" id="donut-legend"></ul>
+          </div>
+          <p class="empty" id="chart-empty">Lance gastos para ver a composição.</p>
+        </div>
+
+        <div class="card">
+          <div class="card__head">
+            <h2>Receita x gasto</h2>
+          </div>
+          <div class="meter" id="meter-list"></div>
+        </div>
+
+        <div class="card">
+          <div class="card__head">
+            <h2>Reserva do mês</h2>
+            <p class="card__sub">Pague-se primeiro: o quanto você quer guardar antes de gastar. Esse valor sai do "ainda posso gastar".</p>
+          </div>
+          <form id="savings-form" class="form form--inset">
+            <div class="field-row">
+              <label class="field">
+                <span>Quero guardar</span>
+                <div class="input-money">
+                  <span>R$</span>
+                  <input type="number" id="savings-input" min="0" step="0.01" inputmode="decimal" placeholder="0,00" />
+                </div>
+              </label>
+              <button type="submit" class="btn btn--primary btn--end">Definir</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="card">
+          <div class="card__head">
+            <h2>Por categoria</h2>
+            <p class="card__sub">Gastos variáveis do mês agrupados.</p>
+          </div>
+          <ul class="legend legend--stack" id="category-breakdown"></ul>
+        </div>
+
+        <div class="card">
+          <div class="card__head">
+            <h2>Resumo do mês</h2>
+            <button type="button" class="link-btn" id="clear-data">Limpar este mês</button>
+          </div>
+          <dl class="summary">
+            <div class="summary__row"><dt>Salário</dt><dd id="summary-salary">R$ 0,00</dd></div>
+            <div class="summary__row"><dt>Recebido por fora</dt><dd id="summary-extra">R$ 0,00</dd></div>
+            <div class="summary__row"><dt>Gastos fixos</dt><dd id="summary-fixed">R$ 0,00</dd></div>
+            <div class="summary__row"><dt>Gastos variáveis</dt><dd id="summary-variable">R$ 0,00</dd></div>
+            <div class="summary__row"><dt>Assinaturas</dt><dd id="summary-subs">R$ 0,00</dd></div>
+            <div class="summary__row"><dt>Parcelas / faturas</dt><dd id="summary-invoices">R$ 0,00</dd></div>
+            <div class="summary__row"><dt>Reserva (guardar)</dt><dd id="summary-savings">R$ 0,00</dd></div>
+            <div class="summary__row summary__row--total"><dt>Total de gastos</dt><dd id="summary-total">R$ 0,00</dd></div>
+          </dl>
+          <div class="backup-row">
+            <button type="button" class="btn btn--secondary" id="export-button">Exportar backup</button>
+            <button type="button" class="btn btn--secondary" id="import-button">Importar backup</button>
+            <button type="button" class="btn btn--secondary" id="report-button">Exportar relatório</button>
+            <input type="file" id="import-file" class="visually-hidden" accept=".json,application/json,text/plain" />
+          </div>
+          <div class="danger-zone">
+            <span class="danger-zone__label">Zona de perigo</span>
+            <p class="danger-zone__desc">Excluir a conta apaga permanentemente todos os seus dados no servidor. Não tem desfazer.</p>
+            <button type="button" class="btn btn--danger" id="delete-account">Excluir conta permanentemente</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAINEL: GASTOS -->
+      <section class="panel-view" id="panel-gastos" role="tabpanel" aria-labelledby="tab-gastos" data-panel="gastos" hidden>
+        <div class="card">
+          <div class="card__head"><h2>Receitas</h2><p class="card__sub">Salário do mês e qualquer dinheiro extra que entrou.</p></div>
+          <form id="salary-form" class="form">
+            <label class="field">
+              <span>Salário do mês</span>
+              <div class="input-money">
+                <span>R$</span>
+                <input type="number" id="salary-input" min="0" step="0.01" inputmode="decimal" placeholder="0,00" />
+              </div>
+            </label>
+            <button type="submit" class="btn btn--primary">Salvar salário</button>
+          </form>
+
+          <form id="income-form" class="form form--inset">
+            <label class="field">
+              <span>Recebido por fora</span>
+              <input type="text" id="income-description" placeholder="Ex: freelance, venda, presente..." required />
+            </label>
+            <div class="field-row">
+              <label class="field">
+                <span>Valor</span>
+                <div class="input-money">
+                  <span>R$</span>
+                  <input type="number" id="income-amount" min="0.01" step="0.01" inputmode="decimal" placeholder="0,00" required />
+                </div>
+              </label>
+              <button type="submit" class="btn btn--primary btn--end">Adicionar</button>
+            </div>
+          </form>
+
+          <p class="swipe-hint">Deslize um item para a esquerda para remover.</p>
+          <ul class="items" id="income-list">
+            <li class="empty" id="income-empty">Nenhuma entrada extra lançada.</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card__head"><h2>Gastos do dia a dia</h2></div>
+          <form id="expense-form" class="form">
+            <label class="field">
+              <span>Descrição</span>
+              <input type="text" id="expense-description" placeholder="Ex: mercado, aluguel, internet..." required />
+            </label>
+            <div class="field-row">
+              <label class="field">
+                <span>Valor</span>
+                <div class="input-money">
+                  <span>R$</span>
+                  <input type="number" id="expense-amount" min="0.01" step="0.01" inputmode="decimal" placeholder="0,00" required />
+                </div>
+              </label>
+              <label class="field">
+                <span>Tipo</span>
+                <select id="expense-type">
+                  <option value="VARIAVEL">Variável</option>
+                  <option value="FIXO">Fixo</option>
+                </select>
+              </label>
+            </div>
+            <label class="field">
+              <span>Categoria</span>
+              <select id="expense-category"></select>
+            </label>
+            <button type="submit" class="btn btn--primary">Adicionar gasto</button>
+          </form>
+
+          <p class="swipe-hint">Deslize um item para a esquerda para remover.</p>
+          <ul class="items" id="expense-list">
+            <li class="empty" id="expense-empty">Nenhum gasto lançado ainda.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- PAINEL: ASSINATURAS -->
+      <section class="panel-view" id="panel-assinaturas" role="tabpanel" aria-labelledby="tab-assinaturas" data-panel="assinaturas" hidden>
+        <div class="card">
+          <div class="card__head">
+            <h2>Assinaturas e streaming</h2>
+            <p class="card__sub">Cobranças mensais recorrentes. Entram cheias no total do mês.</p>
+          </div>
+          <form id="subscription-form" class="form">
+            <label class="field">
+              <span>Serviço</span>
+              <input type="text" id="subscription-name" placeholder="Ex: Netflix, Spotify, academia..." required />
+            </label>
+            <div class="field-row">
+              <label class="field">
+                <span>Valor mensal</span>
+                <div class="input-money">
+                  <span>R$</span>
+                  <input type="number" id="subscription-amount" min="0.01" step="0.01" inputmode="decimal" placeholder="0,00" required />
+                </div>
+              </label>
+              <label class="field">
+                <span>Dia de cobrança</span>
+                <input type="number" id="subscription-day" min="1" max="31" step="1" inputmode="numeric" placeholder="opcional" />
+              </label>
+            </div>
+            <button type="submit" class="btn btn--primary">Adicionar assinatura</button>
+          </form>
+
+          <div class="total-line">
+            <span>Total mensal em assinaturas</span>
+            <strong id="subs-total">R$ 0,00</strong>
+          </div>
+
+          <p class="swipe-hint">Deslize um item para a esquerda para remover.</p>
+          <ul class="items" id="subscription-list">
+            <li class="empty" id="subscription-empty">Nenhuma assinatura cadastrada.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- PAINEL: FATURAS -->
+      <section class="panel-view" id="panel-faturas" role="tabpanel" aria-labelledby="tab-faturas" data-panel="faturas" hidden>
+        <div class="card">
+          <div class="card__head">
+            <h2>Faturas e parcelas</h2>
+            <p class="card__sub">O valor parcelado entra no mês dividido pelo número de parcelas.</p>
+          </div>
+          <form id="invoice-form" class="form">
+            <label class="field">
+              <span>Descrição da fatura</span>
+              <input type="text" id="invoice-description" placeholder="Ex: cartão, energia, escola..." required />
+            </label>
+            <label class="field">
+              <span>Valor total</span>
+              <div class="input-money">
+                <span>R$</span>
+                <input type="number" id="invoice-total" min="0.01" step="0.01" inputmode="decimal" placeholder="0,00" required />
+              </div>
+            </label>
+            <div class="field-row">
+              <label class="field">
+                <span>Vencimento</span>
+                <input type="date" id="invoice-due-date" required />
+              </label>
+              <label class="field">
+                <span>Parcelas</span>
+                <input type="number" id="invoice-installments" min="1" step="1" value="1" inputmode="numeric" required />
+              </label>
+            </div>
+            <button type="submit" class="btn btn--primary">Adicionar fatura</button>
+          </form>
+
+          <p class="swipe-hint">Deslize um item para a esquerda para remover.</p>
+          <ul class="items" id="invoice-list">
+            <li class="empty" id="invoice-empty">Nenhuma fatura lançada.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- PAINEL: HISTÓRICO -->
+      <section class="panel-view" id="panel-historico" role="tabpanel" aria-labelledby="tab-historico" data-panel="historico" hidden>
+        <div class="card">
+          <div class="card__head">
+            <h2>Histórico mensal</h2>
+            <p class="card__sub">Receita e gasto dos últimos meses. Toque num mês para abri-lo no resumo.</p>
+          </div>
+          <div class="history" id="history-list">
+            <p class="empty">Ainda não há histórico para mostrar.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <p class="footnote">
+      Seus dados são salvos por usuário. Cada conta vê apenas o próprio saldo.
+    </p>
+  </div>
+
+  <div id="print-report" aria-hidden="true"></div>
+  <script src="backend-config.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
