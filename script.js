@@ -80,6 +80,11 @@ function monthLabel(key) {
   const label = new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" }).format(new Date(y, m - 1, 1));
   return label.charAt(0).toUpperCase() + label.slice(1);
 }
+function monthLabelShort(key) {
+  const [y, m] = key.split("-").map(Number);
+  const label = new Intl.DateTimeFormat("pt-BR", { month: "short" }).format(new Date(y, m - 1, 1)).replace(".", "");
+  return `${label}/${String(y).slice(2)}`;
+}
 function isRecurringActive(item, key) {
   const start = item.startMonth || "0000-00";
   if (key < start) return false;
@@ -547,12 +552,19 @@ function renderInvoiceList() {
   renderList(invoiceList, state.invoices, "Nenhuma fatura lançada.", (v) => {
     const due = v.dueDate ? new Date(v.dueDate + "T00:00:00") : null;
     const start = v.startMonth;
-    const endKey = addMonths(start, Math.max(v.installments, 1) - 1);
+    const n = Math.max(v.installments, 1);
+    const endKey = addMonths(start, n - 1);
     const active = viewMonth >= start && viewMonth <= endKey;
     const finished = viewMonth > endKey;
-    const dueText = due ? new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" }).format(due) : "—";
-    const perMonth = v.total / Math.max(v.installments, 1);
-    const statusTag = finished ? "quitada" : active ? `${v.installments}x · ${formatMoney(perMonth)}/mês` : `começa ${monthLabel(start)}`;
+    const dueText = due ? new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(due) : "";
+    const perMonth = v.total / n;
+    let statusTag;
+    if (finished) statusTag = "quitada";
+    else if (!active) statusTag = `começa ${monthLabelShort(start)}`;
+    else if (n > 1) statusTag = `${n}× · ${formatMoney(perMonth)}/mês`;
+    else statusTag = "à vista";
+    const periodLine = n > 1 ? `<span class="item__small">${monthLabelShort(start)}→${monthLabelShort(endKey)}</span>` : "";
+    const dueLine = due ? `<span class="item__small">vence ${dueText}</span>` : "";
     return `
       <div class="item__info">
         <span class="item__desc">${escapeHtml(v.description)}</span>
@@ -560,7 +572,8 @@ function renderInvoiceList() {
       </div>
       <div class="item__right">
         <span class="item__amount">${formatMoney(v.total)}</span>
-        <span class="item__small">${start}–${endKey}${due ? " · vence " + dueText : ""}</span>
+        ${periodLine}
+        ${dueLine}
       </div>
       <button type="button" class="item__remove" data-remove-invoice="${v.id}" aria-label="Remover ${escapeHtml(v.description)}">×</button>
     `;
