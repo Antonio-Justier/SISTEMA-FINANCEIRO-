@@ -446,6 +446,28 @@ app.post("/api/state", requireAuth, async (req, res) => {
   }
 });
 
+app.delete("/api/account", requireAuth, async (req, res) => {
+  const userId = req.user.id;
+  try {
+    if (supabase) {
+      await supabase.from("finance_state").delete().eq("user_id", userId);
+      const { error } = await supabase.from("users").delete().eq("id", userId);
+      if (error) {
+        console.error("Falha ao excluir usuário no Supabase:", error);
+        return res.status(500).json({ error: "Falha ao excluir conta" });
+      }
+    } else {
+      const users = await loadUsersFromFile();
+      await saveUsersToFile(users.filter((u) => u.id !== userId));
+      try { await fs.unlink(userStateFile(userId)); } catch {}
+    }
+    res.sendStatus(204);
+  } catch (error) {
+    console.error("Erro ao excluir conta:", error);
+    res.status(500).json({ error: "Falha ao excluir conta" });
+  }
+});
+
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`Servidor iniciado em http://localhost:${port}`);
