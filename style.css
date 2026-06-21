@@ -275,6 +275,39 @@ select:focus {
   transition: background 0.3s ease;
 }
 
+.month-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.month-nav__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card-2);
+  color: var(--text);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+.month-nav__btn:hover { border-color: var(--green); color: var(--green-bright); }
+.month-nav__btn:active { transform: translateY(1px); }
+.month-nav__label {
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+  text-transform: capitalize;
+  color: var(--text);
+}
+
 .hero__label {
   margin: 0;
   font-family: var(--mono);
@@ -313,6 +346,14 @@ select:focus {
   font-size: 0.9rem;
   color: var(--muted);
 }
+.hero__proj {
+  margin: 8px 0 0;
+  font-size: 0.84rem;
+  font-family: var(--mono);
+  color: var(--state-color, var(--green-bright));
+  opacity: 0.92;
+}
+.hero__proj[hidden] { display: none; }
 
 .hero__stats {
   display: grid;
@@ -551,6 +592,83 @@ select:focus {
   text-align: center;
   font-size: 0.8rem;
   color: var(--muted-2);
+}
+
+/* ---------- Legenda empilhada (por categoria) ---------- */
+.legend--stack { margin-top: 8px; }
+.legend--stack li {
+  justify-content: space-between;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.legend--stack li:last-child { border-bottom: none; }
+.legend--stack .empty { border: none; padding: 8px 0; }
+
+/* ---------- Backup (export / import) ---------- */
+.backup-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line-soft);
+}
+.backup-row .btn { flex: 1 1 140px; }
+
+/* ---------- Botão "encerrar" recorrência ---------- */
+.item__end {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+.item__end:hover { color: var(--warn); border-color: var(--warn); }
+
+/* ---------- Histórico mensal ---------- */
+.history { display: grid; gap: 10px; margin-top: 12px; }
+.hist-row {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--card-2);
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+.hist-row:hover { border-color: var(--green); }
+.hist-row.is-current { border-color: var(--green-bright); background: var(--green-soft); }
+.hist-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.hist-month {
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: capitalize;
+  color: var(--text);
+}
+.hist-balance { font-family: var(--mono); font-weight: 600; font-size: 0.9rem; }
+.hist-balance.is-ok { color: var(--ok); }
+.hist-balance.is-warn { color: var(--warn); }
+.hist-balance.is-danger { color: var(--danger); }
+.hist-bars { display: grid; gap: 4px; }
+.hist-bar { display: block; height: 7px; border-radius: 99px; width: 0%; transition: width 0.4s ease; }
+.hist-bar--in { background: var(--green-bright); }
+.hist-bar--out { background: #6f7ce8; }
+.hist-legend {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-family: var(--mono);
 }
 
 /* ---------- Acessibilidade ---------- */

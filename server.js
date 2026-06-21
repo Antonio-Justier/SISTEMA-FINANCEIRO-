@@ -114,6 +114,13 @@ function isValidState(value) {
   if (value.subscriptions !== undefined) {
     if (!Array.isArray(value.subscriptions) || !value.subscriptions.every(isValidSubscription)) return false;
   }
+  // Reserva mensal: opcional, mas se vier precisa ser número não-negativo
+  // (evita gravar lixo que quebraria o cálculo de "posso gastar" no cliente).
+  if (value.savingsTarget !== undefined) {
+    if (typeof value.savingsTarget !== "number" || !Number.isFinite(value.savingsTarget) || value.savingsTarget < 0) {
+      return false;
+    }
+  }
   return true;
 }
 
