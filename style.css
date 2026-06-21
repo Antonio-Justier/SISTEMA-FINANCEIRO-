@@ -188,6 +188,18 @@ h1 {
 }
 .field-row .field { min-width: 0; }
 
+/* Faturas: "Vencimento" (input de data) + "Parcelas" lado a lado.
+   O input de data tem largura mínima nativa (iOS/Safari) que ignora o
+   min-width do .field; em telas estreitas ele transbordava sobre o campo
+   de parcelas. Aqui damos uma coluna estreita e fixa para parcelas e
+   forçamos a data a poder encolher. */
+#invoice-form .field-row {
+  grid-template-columns: minmax(0, 1fr) 96px;
+}
+#invoice-form .field-row input {
+  min-width: 0;
+}
+
 input,
 select {
   width: 100%;
