@@ -199,6 +199,19 @@ h1 {
 #invoice-form .field-row input {
   min-width: 0;
 }
+/* iOS: o input[type=date] tem largura intrínseca grande que ignora o
+   min-width; força encolher e ocupar a coluna sem transbordar. */
+#invoice-form input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+/* Em telas estreitas, empilha Vencimento e Parcelas (acaba o aperto). */
+@media (max-width: 380px) {
+  #invoice-form .field-row { grid-template-columns: 1fr; }
+}
 
 input,
 select {
@@ -698,4 +711,25 @@ select:focus {
   .page { padding: 40px 24px 64px; }
   .donut-wrap { margin: 0; }
   .auth-actions .btn { flex: 0 1 auto; }
+}
+
+/* ---------- Relatório (impressão / "Salvar como PDF") ---------- */
+#print-report { display: none; }
+@media print {
+  body * { visibility: hidden; }
+  #print-report, #print-report * { visibility: visible; }
+  #print-report {
+    display: block;
+    position: absolute;
+    inset: 0;
+    padding: 24px;
+    color: #000;
+    background: #fff;
+    font-family: "Inter", system-ui, sans-serif;
+  }
+  #print-report h1 { font-size: 18px; margin: 0 0 4px; }
+  #print-report h2 { font-size: 13px; margin: 16px 0 6px; border-bottom: 1px solid #ccc; padding-bottom: 2px; }
+  #print-report p.muted { color: #555; font-size: 11px; margin: 0 0 8px; }
+  #print-report table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  #print-report td { padding: 3px 0; vertical-align: top; }
 }
