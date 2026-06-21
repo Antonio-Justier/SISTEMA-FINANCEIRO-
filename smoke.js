@@ -70,12 +70,13 @@ setTimeout(() => {
 
   const balance = doc.getElementById("balance-amount").textContent;
   const heroIncome = doc.getElementById("hero-income").textContent;
-  const ratio = doc.getElementById("hero-ratio").textContent;
+  const committed = doc.getElementById("hero-committed").textContent;
+  const spent = doc.getElementById("hero-spent").textContent;
   const cardClass = doc.getElementById("balance-card").className;
-  console.log("Receita:", heroIncome, "| Saldo:", balance, "| Usado:", ratio, "| Estado cor:", cardClass);
+  console.log("Receita:", heroIncome, "| Comprometido:", committed, "| Já gasto:", spent, "| Saldo:", balance, "| Estado cor:", cardClass);
 
-  // esperado: receita 5800; gastos 1539.90; saldo 4260.10; ratio ~27% -> verde (is-ok)
-  const okCalc = balance.includes("4.260,10") && heroIncome.includes("5.800,00") && cardClass.includes("is-ok");
+  // esperado: receita 5800; comprometido 1539,90 (fixo+assinatura); já gasto 0; saldo 4260,10; verde (is-ok)
+  const okCalc = balance.includes("4.260,10") && heroIncome.includes("5.800,00") && committed.includes("1.539,90") && cardClass.includes("is-ok");
 
   // testa transição de cor: estoura gasto pra >90%
   doc.getElementById("expense-description").value = "Carro";

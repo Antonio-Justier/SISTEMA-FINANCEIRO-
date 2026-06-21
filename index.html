@@ -58,24 +58,30 @@
     <main class="app" id="app-layout" hidden>
       <!-- HERO: saldo sempre visível, com cor que muda conforme o quanto já foi gasto -->
       <section class="hero" id="balance-card" aria-live="polite">
-        <p class="hero__label">saldo disponível</p>
+        <div class="month-nav">
+          <button type="button" class="month-nav__btn" id="month-prev" aria-label="Mês anterior">‹</button>
+          <span class="month-nav__label" id="month-label">—</span>
+          <button type="button" class="month-nav__btn" id="month-next" aria-label="Próximo mês">›</button>
+        </div>
+        <p class="hero__label">ainda posso gastar</p>
         <p class="hero__balance" id="balance-amount">R$ 0,00</p>
         <div class="hero__bar" role="img" aria-label="Percentual da receita já comprometido">
           <span class="hero__bar-fill" id="balance-bar"></span>
         </div>
         <p class="hero__hint" id="balance-hint">Informe seu salário para começar.</p>
+        <p class="hero__proj" id="proj-hint" hidden></p>
         <div class="hero__stats">
           <div class="hero__stat">
             <span class="hero__stat-label">receita</span>
             <span class="hero__stat-value" id="hero-income">R$ 0,00</span>
           </div>
           <div class="hero__stat">
-            <span class="hero__stat-label">gastos</span>
-            <span class="hero__stat-value" id="hero-expenses">R$ 0,00</span>
+            <span class="hero__stat-label">comprometido</span>
+            <span class="hero__stat-value" id="hero-committed">R$ 0,00</span>
           </div>
           <div class="hero__stat">
-            <span class="hero__stat-label">usado</span>
-            <span class="hero__stat-value" id="hero-ratio">0%</span>
+            <span class="hero__stat-label">já gasto</span>
+            <span class="hero__stat-value" id="hero-spent">R$ 0,00</span>
           </div>
         </div>
       </section>
@@ -86,6 +92,7 @@
         <button class="tab" role="tab" id="tab-gastos" data-tab="gastos" aria-selected="false" aria-controls="panel-gastos">Gastos</button>
         <button class="tab" role="tab" id="tab-assinaturas" data-tab="assinaturas" aria-selected="false" aria-controls="panel-assinaturas">Assinaturas</button>
         <button class="tab" role="tab" id="tab-faturas" data-tab="faturas" aria-selected="false" aria-controls="panel-faturas">Faturas</button>
+        <button class="tab" role="tab" id="tab-historico" data-tab="historico" aria-selected="false" aria-controls="panel-historico">Histórico</button>
       </nav>
 
       <!-- PAINEL: RESUMO -->
@@ -117,6 +124,33 @@
 
         <div class="card">
           <div class="card__head">
+            <h2>Reserva do mês</h2>
+            <p class="card__sub">Pague-se primeiro: o quanto você quer guardar antes de gastar. Esse valor sai do "ainda posso gastar".</p>
+          </div>
+          <form id="savings-form" class="form form--inset">
+            <div class="field-row">
+              <label class="field">
+                <span>Quero guardar</span>
+                <div class="input-money">
+                  <span>R$</span>
+                  <input type="number" id="savings-input" min="0" step="0.01" inputmode="decimal" placeholder="0,00" />
+                </div>
+              </label>
+              <button type="submit" class="btn btn--primary btn--end">Definir</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="card">
+          <div class="card__head">
+            <h2>Por categoria</h2>
+            <p class="card__sub">Gastos variáveis do mês agrupados.</p>
+          </div>
+          <ul class="legend legend--stack" id="category-breakdown"></ul>
+        </div>
+
+        <div class="card">
+          <div class="card__head">
             <h2>Resumo do mês</h2>
             <button type="button" class="link-btn" id="clear-data">Limpar tudo</button>
           </div>
@@ -127,8 +161,14 @@
             <div class="summary__row"><dt>Gastos variáveis</dt><dd id="summary-variable">R$ 0,00</dd></div>
             <div class="summary__row"><dt>Assinaturas</dt><dd id="summary-subs">R$ 0,00</dd></div>
             <div class="summary__row"><dt>Parcelas / faturas</dt><dd id="summary-invoices">R$ 0,00</dd></div>
+            <div class="summary__row"><dt>Reserva (guardar)</dt><dd id="summary-savings">R$ 0,00</dd></div>
             <div class="summary__row summary__row--total"><dt>Total de gastos</dt><dd id="summary-total">R$ 0,00</dd></div>
           </dl>
+          <div class="backup-row">
+            <button type="button" class="btn btn--secondary" id="export-button">Exportar backup</button>
+            <button type="button" class="btn btn--secondary" id="import-button">Importar backup</button>
+            <input type="file" id="import-file" hidden accept="application/json" />
+          </div>
         </div>
       </section>
 
@@ -192,6 +232,10 @@
                 </select>
               </label>
             </div>
+            <label class="field">
+              <span>Categoria</span>
+              <select id="expense-category"></select>
+            </label>
             <button type="submit" class="btn btn--primary">Adicionar gasto</button>
           </form>
 
@@ -275,6 +319,19 @@
           <ul class="items" id="invoice-list">
             <li class="empty" id="invoice-empty">Nenhuma fatura lançada.</li>
           </ul>
+        </div>
+      </section>
+
+      <!-- PAINEL: HISTÓRICO -->
+      <section class="panel-view" id="panel-historico" role="tabpanel" aria-labelledby="tab-historico" data-panel="historico" hidden>
+        <div class="card">
+          <div class="card__head">
+            <h2>Histórico mensal</h2>
+            <p class="card__sub">Receita e gasto dos últimos meses. Toque num mês para abri-lo no resumo.</p>
+          </div>
+          <div class="history" id="history-list">
+            <p class="empty">Ainda não há histórico para mostrar.</p>
+          </div>
         </div>
       </section>
     </main>

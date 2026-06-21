@@ -38,40 +38,87 @@ do cálculo e da troca de cores.
 
 ## Funcionalidades
 
-- **Resumo:** saldo disponível em destaque, com cor e barra de progresso por % de receita
-  comprometida; gráfico de rosca (donut) com a distribuição dos gastos; medidores por
-  categoria; quadro de totais (salário, extras, fixos, variáveis, assinaturas, faturas).
-- **Gastos:** lançamento de despesas `FIXO`/`VARIAVEL` e dos **recebimentos extras**
-  ("valor recebido por fora").
-- **Assinaturas:** aba dedicada para streamings/serviços recorrentes, com dia de
-  vencimento e total mensal.
-- **Faturas:** aba dedicada para compras parceladas; o app divide o total pelas parcelas e
-  considera só a parcela do mês no cálculo do saldo.
+- **Competência mensal + histórico.** Tudo é organizado por mês (`YYYY-MM`). Você navega
+  entre meses no topo (‹ mês ›) e cada mês tem seu próprio saldo. A aba **Histórico** mostra
+  receita × gasto dos últimos meses; tocar num mês abre ele no resumo.
+- **Comprometido × já gasto × ainda posso gastar.** O número grande do topo é o que **ainda
+  dá pra gastar**, não a sobra contábil. Ele separa três coisas que o app antigo misturava:
+  - **comprometido** = o que já está decidido e vai sair (fixos, assinaturas, parcela do
+    mês, reserva);
+  - **já gasto** = o que você efetivamente gastou em variáveis no mês;
+  - **ainda posso gastar** = `receita − comprometido − já gasto`.
+- **Parcelas que terminam.** Faturas têm mês de início + nº de parcelas. A parcela só pesa
+  nos meses do intervalo dela e **some sozinha** quando acaba — o app antigo deixava parcela
+  pesando para sempre.
+- **Reserva ("pague-se primeiro").** Você define quanto quer guardar; esse valor entra no
+  comprometido e sai do "ainda posso gastar", então a meta é respeitada antes do consumo.
+- **Categorias.** Cada gasto variável recebe uma categoria (Moradia, Mercado, Transporte,
+  Saúde, Lazer, Educação, Outros) e o resumo mostra a quebra por categoria.
+- **Projeção de fim de mês.** Com base no ritmo de gasto variável até a data atual, o app
+  estima como o mês deve fechar (de folga ou no vermelho).
+- **Recorrência automática.** Gastos `FIXO` e assinaturas se repetem nos meses seguintes
+  sozinhos (a partir do mês em que foram criados), até você **encerrá-los** — aí param de
+  contar dali em diante, sem apagar o histórico passado.
+- **Backup (export / import JSON).** Exporta todo o estado da conta para um arquivo e
+  reimporta depois. A importação passa pela **mesma normalização defensiva** do app (lixo é
+  filtrado) e pede confirmação antes de substituir os dados atuais.
 - **Saldo colorido:** verde (folga), amarelo (acima de ~70% da receita usada), vermelho
   (acima de ~90% ou saldo negativo).
 - **PWA:** instalável, com service worker (offline para a casca do app; nunca cacheia
   `/api/`).
 
-### Modelo de dados (estado por usuário)
+### Modelo de dados (estado por usuário) — schema v2
+
+A competência (`month` / `startMonth` / `endMonth`) é sempre uma string `"YYYY-MM"`,
+comparável lexicograficamente. O salário é mensal e vale para todos os meses.
 
 ```js
 state = {
-  salary: number,
-  incomes:       [{ id, description, amount, date }],
-  expenses:      [{ id, description, amount, type: "FIXO" | "VARIAVEL" }],
-  subscriptions: [{ id, name, amount, dueDay }],
-  invoices:      [{ id, description, total, dueDate, installments }],
+  schemaVersion: 2,
+  salary: number,            // mensal, aplica a todo mês
+  savingsTarget: number,     // reserva mensal (≥ 0)
+  incomes:       [{ id, description, amount, date, month }],            // pontual
+  expenses:      [{ id, description, amount, type, category,
+                    month,                 // se VARIAVEL: mês do gasto
+                    startMonth, endMonth   // se FIXO: vigência recorrente
+                 }],
+  subscriptions: [{ id, name, amount, dueDay, startMonth, endMonth }],  // recorrente
+  invoices:      [{ id, description, total, dueDate, installments, startMonth }],
   updatedAt: number
 }
 ```
 
-Cálculo:
+Cálculo (por mês `m`):
 ```
-receita  = salary + Σ incomes.amount
-gastos   = Σ fixos + Σ variáveis + Σ subscriptions.amount + Σ (invoice.total / installments)
-saldo    = receita - gastos
-usado(%) = gastos / receita
+receita      = salary + Σ incomes(m).amount
+comprometido = Σ fixos ativos em m
+             + Σ assinaturas ativas em m
+             + Σ parcela de invoice que incide em m   (total / installments)
+             + savingsTarget
+já gasto     = Σ variáveis lançados em m
+posso gastar = receita − comprometido − já gasto
+usado(%)     = (comprometido + já gasto) / receita
 ```
+
+> **Recorrência:** um item FIXO/assinatura está ativo em `m` se `startMonth ≤ m` e
+> (`endMonth` ausente ou `m ≤ endMonth`). "Encerrar" grava `endMonth = mês anterior ao
+> atual`, então ele para de contar a partir do mês corrente sem afetar o passado.
+>
+> **Parcela:** a invoice incide em `m` se `startMonth ≤ m < startMonth + installments`.
+
+### Migração do schema v1 → v2 (sem perda de dados)
+
+Estados antigos (sem `schemaVersion`) são migrados no carregamento, **preservando todos os
+lançamentos**:
+
+- itens sem competência ganham o **mês atual** (`incomes`/`expenses` variáveis);
+- `FIXO` e assinaturas ganham `startMonth = mês atual` e seguem recorrentes dali em diante;
+- `invoices` ganham `startMonth` derivado do `dueDate` (ou mês atual, se ausente);
+- `savingsTarget` ausente vira `0`.
+
+A normalização é **defensiva**: campos corrompidos são saneados em vez de derrubar o estado
+inteiro, e há limites máximos (nº de itens e tamanho de string) para evitar payloads
+abusivos. A mesma rotina protege a importação de backup.
 
 ---
 
@@ -153,13 +200,26 @@ os itens 1, 2 e 4 são os que eu resolveria primeiro.
 ## Estrutura
 
 ```
-index.html            # UI com abas (Resumo / Gastos / Assinaturas / Faturas)
+index.html            # UI com abas (Resumo / Gastos / Assinaturas / Faturas / Histórico)
 style.css             # tema preto + verde derivado da logo
-script.js             # lógica do front, cálculos, donut em canvas, sync
+script.js             # lógica do front: competência mensal, cálculos, donut, sync, backup
 server.js             # API Express + JWT + bcrypt + Supabase/arquivo
 service-worker.js     # PWA offline (nunca cacheia /api/)
 manifest.webmanifest  # manifesto do PWA
 backend-config.js     # URL pública do backend
-smoke.js              # teste de fumaça (jsdom) do fluxo principal
+model.test.js         # testes do núcleo (migração v1→v2, cálculos, parcelas, reserva)
+smoke.js              # teste de fumaça (jsdom) do fluxo principal na UI
 icon-*.png / icon.svg # ícones
 ```
+
+### Testes
+
+```bash
+node model.test.js     # núcleo do modelo, sem dependências (migração, cálculos, import)
+node smoke.js          # fluxo de UI em jsdom (requer jsdom instalado)
+```
+
+O `model.test.js` cobre o que mais importa para **não perder dado**: a migração v1→v2
+preserva todos os lançamentos, a parcela 12× incide só no intervalo correto (e some no 13º
+mês), a recorrência respeita início/fim, a reserva desconta do disponível e a importação
+filtra entradas inválidas.
