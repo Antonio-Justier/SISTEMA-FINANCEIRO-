@@ -548,6 +548,10 @@ select:focus {
 .item__desc { font-weight: 500; overflow-wrap: anywhere; }
 .item__tag {
   justify-self: start;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-size: 0.68rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
