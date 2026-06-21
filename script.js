@@ -311,6 +311,7 @@ const clearDataButton = $("clear-data");
 const exportButton = $("export-button");
 const importButton = $("import-button");
 const reportButton = $("report-button");
+const deleteAccountButton = $("delete-account");
 const importFile = $("import-file");
 
 const balanceCard = $("balance-card");
@@ -477,7 +478,7 @@ function buildHint(t, status) {
 
 function escapeHtml(value) { const div = document.createElement("div"); div.textContent = value; return div.innerHTML; }
 
-function renderList(listEl, items, emptyText, buildItemHtml) {
+function renderList(listEl, items, emptyText, buildItemHtml, kind, getId) {
   listEl.innerHTML = "";
   if (items.length === 0) {
     const li = document.createElement("li");
@@ -486,10 +487,20 @@ function renderList(listEl, items, emptyText, buildItemHtml) {
     listEl.appendChild(li);
     return;
   }
+  const swipeable = Boolean(kind && typeof getId === "function");
   for (const it of [...items].reverse()) {
     const li = document.createElement("li");
-    li.className = "item item--row";
-    li.innerHTML = buildItemHtml(it);
+    if (swipeable) {
+      li.className = "swipe-row";
+      li.dataset.kind = kind;
+      li.dataset.id = getId(it);
+      li.innerHTML =
+        `<div class="item item--row swipe-content">${buildItemHtml(it)}</div>` +
+        `<button type="button" class="swipe-delete" aria-label="Remover">Remover</button>`;
+    } else {
+      li.className = "item item--row";
+      li.innerHTML = buildItemHtml(it);
+    }
     listEl.appendChild(li);
   }
 }
@@ -513,8 +524,7 @@ function renderIncomeList() {
       <span class="item__tag is-income">recebido</span>
     </div>
     <div class="item__right"><span class="item__amount is-income">+ ${formatMoney(i.amount)}</span></div>
-    <button type="button" class="item__remove" data-remove-income="${i.id}" aria-label="Remover ${escapeHtml(i.description)}">×</button>
-  `);
+  `, "income", (i) => i.id);
 }
 
 function renderExpenseList() {
@@ -531,9 +541,8 @@ function renderExpenseList() {
     </div>
     <div class="item__right"><span class="item__amount">${formatMoney(e.amount)}</span>${isFixo ? '<span class="item__small">/mês</span>' : ""}</div>
     ${endBtn}
-    <button type="button" class="item__remove" data-remove-expense="${e.id}" aria-label="Remover ${escapeHtml(e.description)}">×</button>
   `;
-  });
+  }, "expense", (e) => e.id);
 }
 
 function renderSubscriptionList() {
@@ -545,8 +554,7 @@ function renderSubscriptionList() {
     </div>
     <div class="item__right"><span class="item__amount">${formatMoney(s.amount)}<span class="item__small">/mês</span></span></div>
     <button type="button" class="item__end" data-end-subscription="${s.id}" aria-label="Encerrar ${escapeHtml(s.name)}">encerrar</button>
-    <button type="button" class="item__remove" data-remove-subscription="${s.id}" aria-label="Remover ${escapeHtml(s.name)}">×</button>
-  `);
+  `, "subscription", (s) => s.id);
 }
 
 function renderInvoiceList() {
@@ -576,9 +584,8 @@ function renderInvoiceList() {
         ${periodLine}
         ${dueLine}
       </div>
-      <button type="button" class="item__remove" data-remove-invoice="${v.id}" aria-label="Remover ${escapeHtml(v.description)}">×</button>
     `;
-  });
+  }, "invoice", (v) => v.id);
 }
 
 // ---------------------------------------------------------
@@ -732,7 +739,6 @@ function importData(file) {
 
 // ---------------------------------------------------------
 // Relatório (impressão / "Salvar como PDF") — sem libs, CSP-safe.
-// Monta o mês em foco num container e dispara window.print().
 // ---------------------------------------------------------
 function exportReport() {
   const t = computeTotals(viewMonth);
@@ -766,6 +772,31 @@ function exportReport() {
     ${section("Faturas (parcela do mês)", invs.map((v) => line(v.description, invoiceInstallmentFor(v, viewMonth))))}
   `;
   window.print();
+}
+
+// ---------------------------------------------------------
+// Excluir conta — apaga a conta e TODO o estado no servidor.
+// ---------------------------------------------------------
+async function deleteAccount() {
+  if (!currentUser) { window.alert("Você precisa estar logado."); return; }
+  const ok = window.confirm(
+    "Excluir sua conta apaga PERMANENTEMENTE todos os seus dados no servidor. Esta ação não tem desfazer.\n\n" +
+    "Dica: exporte um backup antes, se quiser guardar. Excluir mesmo assim?"
+  );
+  if (!ok) return;
+  const response = await authRequest("/account", { method: "DELETE" });
+  if (!response || !response.ok) {
+    window.alert("Não foi possível excluir a conta agora. Tente novamente em instantes.");
+    return;
+  }
+  try { localStorage.removeItem(activeStorageKey()); } catch {}
+  setToken("");
+  setAuthenticated(null);
+  state = emptyState();
+  viewMonth = currentMonthKey();
+  salaryInput.value = "";
+  render();
+  showAuthMessage("Conta excluída.", false);
 }
 
 // ---------------------------------------------------------
@@ -912,15 +943,18 @@ registerButton.addEventListener("click", async () => { await register(); });
 logoutButton.addEventListener("click", async () => { await logout(); });
 
 // Remoção / encerramento delegados
-incomeList.addEventListener("click", (event) => {
-  const btn = event.target.closest("[data-remove-income]");
-  if (!btn) return;
-  state.incomes = state.incomes.filter((i) => i.id !== btn.getAttribute("data-remove-income"));
+// Remoção unificada por tipo (acionada pelo swipe)
+function removeItem(kind, id) {
+  if (kind === "income") state.incomes = state.incomes.filter((i) => i.id !== id);
+  else if (kind === "expense") state.expenses = state.expenses.filter((e) => e.id !== id);
+  else if (kind === "subscription") state.subscriptions = state.subscriptions.filter((s) => s.id !== id);
+  else if (kind === "invoice") state.invoices = state.invoices.filter((v) => v.id !== id);
+  else return;
   render();
-});
+}
+
+// "Encerrar" (só recorrentes): para de contar do mês atual em diante.
 expenseList.addEventListener("click", (event) => {
-  const rm = event.target.closest("[data-remove-expense]");
-  if (rm) { state.expenses = state.expenses.filter((e) => e.id !== rm.getAttribute("data-remove-expense")); render(); return; }
   const end = event.target.closest("[data-end-expense]");
   if (end) {
     const e = state.expenses.find((x) => x.id === end.getAttribute("data-end-expense"));
@@ -928,32 +962,92 @@ expenseList.addEventListener("click", (event) => {
   }
 });
 subscriptionList.addEventListener("click", (event) => {
-  const rm = event.target.closest("[data-remove-subscription]");
-  if (rm) { state.subscriptions = state.subscriptions.filter((s) => s.id !== rm.getAttribute("data-remove-subscription")); render(); return; }
   const end = event.target.closest("[data-end-subscription]");
   if (end) {
     const s = state.subscriptions.find((x) => x.id === end.getAttribute("data-end-subscription"));
     if (s) { s.endMonth = addMonths(viewMonth, -1); render(); }
   }
 });
-invoiceList.addEventListener("click", (event) => {
-  const btn = event.target.closest("[data-remove-invoice]");
-  if (!btn) return;
-  state.invoices = state.invoices.filter((v) => v.id !== btn.getAttribute("data-remove-invoice"));
-  render();
-});
+
+// Deslizar para remover — gesto em cada lista (toque e mouse via Pointer Events).
+function attachSwipe(listEl) {
+  if (!listEl) return;
+  const OPEN = 96, THRESHOLD = 48;
+  let row = null, content = null, startX = 0, startY = 0, dragging = false, decided = false;
+
+  function closeOpenRows(except) {
+    listEl.querySelectorAll(".swipe-row.is-open").forEach((r) => {
+      if (r !== except) { r.classList.remove("is-open"); const c = r.querySelector(".swipe-content"); if (c) c.style.transform = ""; }
+    });
+  }
+
+  listEl.addEventListener("pointerdown", (e) => {
+    const target = e.target.closest(".swipe-content");
+    if (!target) return;
+    if (e.target.closest("button")) return; // deixa cliques em encerrar/remover passarem
+    row = target.closest(".swipe-row");
+    content = target;
+    startX = e.clientX; startY = e.clientY;
+    dragging = true; decided = false;
+  });
+
+  listEl.addEventListener("pointermove", (e) => {
+    if (!dragging || !content) return;
+    const dx = e.clientX - startX, dy = e.clientY - startY;
+    if (!decided) {
+      if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+      if (Math.abs(dy) > Math.abs(dx)) { dragging = false; return; } // rolagem vertical
+      decided = true;
+      row.classList.add("is-dragging");
+      closeOpenRows(row);
+    }
+    let move = dx;
+    if (row.classList.contains("is-open")) move = dx - OPEN;
+    move = Math.max(-OPEN, Math.min(0, move));
+    content.style.transform = `translateX(${move}px)`;
+    e.preventDefault();
+  });
+
+  function endDrag(e) {
+    if (!dragging || !content) { dragging = false; return; }
+    dragging = false;
+    if (!decided) { content = row = null; return; }
+    row.classList.remove("is-dragging");
+    const dx = e.clientX - startX;
+    const base = row.classList.contains("is-open") ? -OPEN : 0;
+    const finalPos = Math.max(-OPEN, Math.min(0, base + dx));
+    const open = finalPos <= -THRESHOLD;
+    row.classList.toggle("is-open", open);
+    content.style.transform = open ? `translateX(${-OPEN}px)` : "";
+    content = row = null;
+  }
+  listEl.addEventListener("pointerup", endDrag);
+  listEl.addEventListener("pointercancel", endDrag);
+
+  // tap no botão "Remover" revelado
+  listEl.addEventListener("click", (e) => {
+    const del = e.target.closest(".swipe-delete");
+    if (!del) return;
+    const r = del.closest(".swipe-row");
+    if (r && r.dataset.kind && r.dataset.id) removeItem(r.dataset.kind, r.dataset.id);
+  });
+}
+[incomeList, expenseList, subscriptionList, invoiceList].forEach(attachSwipe);
 
 clearDataButton.addEventListener("click", () => {
-  const ok = window.confirm("Isso apaga salário, reserva, receitas, gastos, assinaturas e faturas desta conta — de todos os meses. Continuar?");
+  const ok = window.confirm(
+    `Isso remove os gastos VARIÁVEIS e as receitas extras de ${monthLabel(viewMonth)}.\n\n` +
+    `Salário, reserva, gastos fixos, assinaturas e faturas (recorrentes) NÃO são afetados — para esses, use "encerrar". Continuar?`
+  );
   if (!ok) return;
-  state = emptyState();
-  viewMonth = currentMonthKey();
-  salaryInput.value = "";
+  state.incomes = state.incomes.filter((i) => i.month !== viewMonth);
+  state.expenses = state.expenses.filter((e) => !(e.type === "VARIAVEL" && e.month === viewMonth));
   render();
 });
 
 if (exportButton) exportButton.addEventListener("click", exportData);
 if (reportButton) reportButton.addEventListener("click", exportReport);
+if (deleteAccountButton) deleteAccountButton.addEventListener("click", () => { deleteAccount(); });
 if (importButton) importButton.addEventListener("click", () => importFile && importFile.click());
 if (importFile) importFile.addEventListener("change", (event) => {
   const file = event.target.files && event.target.files[0];
