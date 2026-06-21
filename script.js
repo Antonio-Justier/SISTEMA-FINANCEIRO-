@@ -656,18 +656,45 @@ function renderHistory() {
 // ---------------------------------------------------------
 // Exportar / Importar (JSON)
 // ---------------------------------------------------------
-function exportData() {
+async function exportData() {
   const payload = { ...state, exportedAt: new Date().toISOString(), app: "financeiro", schemaVersion: SCHEMA_VERSION };
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
+  const json = JSON.stringify(payload, null, 2);
   const who = (currentUser && currentUser.username) ? currentUser.username : "dados";
-  a.href = url;
-  a.download = `financeiro-${who}-${currentMonthKey()}.json`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  const filename = `financeiro-${who}-${currentMonthKey()}.json`;
+
+  // Mobile (toque): usa a Web Share API com arquivo. No iOS isso abre o
+  // "Salvar em Arquivos" — o <a download> simplesmente não funciona lá
+  // (o Safari abre o JSON na própria aba em vez de baixar).
+  const isTouch = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+  if (isTouch && typeof File === "function" && navigator.canShare) {
+    try {
+      const file = new File([json], filename, { type: "application/json" });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: filename });
+        return;
+      }
+    } catch (err) {
+      if (err && err.name === "AbortError") return; // usuário cancelou de propósito
+      // qualquer outra falha cai no fallback de download abaixo
+    }
+  }
+
+  // Desktop / Android com download: <a download> + blob.
+  try {
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  } catch (err) {
+    // Último recurso: mostra o JSON para o usuário copiar manualmente.
+    window.prompt("Não foi possível baixar. Copie o backup abaixo e salve num arquivo .json:", json);
+  }
 }
 
 function importData(file) {
