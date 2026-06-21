@@ -152,7 +152,7 @@
         <div class="card">
           <div class="card__head">
             <h2>Resumo do mês</h2>
-            <button type="button" class="link-btn" id="clear-data">Limpar tudo</button>
+            <button type="button" class="link-btn" id="clear-data">Limpar este mês</button>
           </div>
           <dl class="summary">
             <div class="summary__row"><dt>Salário</dt><dd id="summary-salary">R$ 0,00</dd></div>
@@ -169,6 +169,11 @@
             <button type="button" class="btn btn--secondary" id="import-button">Importar backup</button>
             <button type="button" class="btn btn--secondary" id="report-button">Exportar relatório</button>
             <input type="file" id="import-file" class="visually-hidden" accept=".json,application/json,text/plain" />
+          </div>
+          <div class="danger-zone">
+            <span class="danger-zone__label">Zona de perigo</span>
+            <p class="danger-zone__desc">Excluir a conta apaga permanentemente todos os seus dados no servidor. Não tem desfazer.</p>
+            <button type="button" class="btn btn--danger" id="delete-account">Excluir conta permanentemente</button>
           </div>
         </div>
       </section>
@@ -205,6 +210,7 @@
             </div>
           </form>
 
+          <p class="swipe-hint">Deslize um item para a esquerda para remover.</p>
           <ul class="items" id="income-list">
             <li class="empty" id="income-empty">Nenhuma entrada extra lançada.</li>
           </ul>
@@ -240,6 +246,7 @@
             <button type="submit" class="btn btn--primary">Adicionar gasto</button>
           </form>
 
+          <p class="swipe-hint">Deslize um item para a esquerda para remover.</p>
           <ul class="items" id="expense-list">
             <li class="empty" id="expense-empty">Nenhum gasto lançado ainda.</li>
           </ul>
@@ -279,6 +286,7 @@
             <strong id="subs-total">R$ 0,00</strong>
           </div>
 
+          <p class="swipe-hint">Deslize um item para a esquerda para remover.</p>
           <ul class="items" id="subscription-list">
             <li class="empty" id="subscription-empty">Nenhuma assinatura cadastrada.</li>
           </ul>
@@ -317,6 +325,7 @@
             <button type="submit" class="btn btn--primary">Adicionar fatura</button>
           </form>
 
+          <p class="swipe-hint">Deslize um item para a esquerda para remover.</p>
           <ul class="items" id="invoice-list">
             <li class="empty" id="invoice-empty">Nenhuma fatura lançada.</li>
           </ul>
