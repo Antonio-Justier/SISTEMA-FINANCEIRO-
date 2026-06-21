@@ -310,6 +310,7 @@ const invoiceList = $("invoice-list");
 const clearDataButton = $("clear-data");
 const exportButton = $("export-button");
 const importButton = $("import-button");
+const reportButton = $("report-button");
 const importFile = $("import-file");
 
 const balanceCard = $("balance-card");
@@ -730,6 +731,44 @@ function importData(file) {
 }
 
 // ---------------------------------------------------------
+// Relatório (impressão / "Salvar como PDF") — sem libs, CSP-safe.
+// Monta o mês em foco num container e dispara window.print().
+// ---------------------------------------------------------
+function exportReport() {
+  const t = computeTotals(viewMonth);
+  const who = (currentUser && currentUser.username) ? currentUser.username : "—";
+  const cats = categoryBreakdown(viewMonth);
+  const fixos = state.expenses.filter((e) => e.type === "FIXO" && isRecurringActive(e, viewMonth));
+  const variaveis = state.expenses.filter((e) => e.type === "VARIAVEL" && e.month === viewMonth);
+  const subs = state.subscriptions.filter((s) => isRecurringActive(s, viewMonth));
+  const invs = state.invoices.filter((v) => invoiceInstallmentFor(v, viewMonth) > 0);
+
+  const kpi = (l, v) => `<tr><td>${l}</td><td style="text-align:right"><strong>${formatMoney(v)}</strong></td></tr>`;
+  const line = (l, v) => `<tr><td>${escapeHtml(l)}</td><td style="text-align:right">${formatMoney(v)}</td></tr>`;
+  const section = (title, rows) => (rows.length ? `<h2>${title}</h2><table>${rows.join("")}</table>` : "");
+
+  const target = document.getElementById("print-report");
+  if (!target) return;
+  target.innerHTML = `
+    <h1>Relatório financeiro — ${monthLabel(viewMonth)}</h1>
+    <p class="muted">Conta: ${escapeHtml(who)} · Gerado em ${new Date().toLocaleString("pt-BR")}</p>
+    <h2>Resumo</h2>
+    <table>
+      ${kpi("Receita", t.income)}
+      ${kpi("Comprometido", t.committed)}
+      ${kpi("Já gasto", t.spent)}
+      ${kpi("Ainda posso gastar", t.canSpend)}
+    </table>
+    ${section("Gastos por categoria", cats.map((c) => line(c.name, c.value)))}
+    ${section("Fixos", fixos.map((e) => line(e.description, e.amount)))}
+    ${section("Variáveis", variaveis.map((e) => line(`${e.description} · ${e.category}`, e.amount)))}
+    ${section("Assinaturas", subs.map((s) => line(s.name, s.amount)))}
+    ${section("Faturas (parcela do mês)", invs.map((v) => line(v.description, invoiceInstallmentFor(v, viewMonth))))}
+  `;
+  window.print();
+}
+
+// ---------------------------------------------------------
 // Autenticação / sessão
 // ---------------------------------------------------------
 function showAuthMessage(message, isError = true) {
@@ -914,6 +953,7 @@ clearDataButton.addEventListener("click", () => {
 });
 
 if (exportButton) exportButton.addEventListener("click", exportData);
+if (reportButton) reportButton.addEventListener("click", exportReport);
 if (importButton) importButton.addEventListener("click", () => importFile && importFile.click());
 if (importFile) importFile.addEventListener("change", (event) => {
   const file = event.target.files && event.target.files[0];
